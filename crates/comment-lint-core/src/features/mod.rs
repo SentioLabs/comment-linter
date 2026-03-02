@@ -2,6 +2,11 @@
 
 use serde::{Deserialize, Serialize};
 
+pub mod cross_reference;
+pub mod lexical;
+pub mod semantic;
+pub mod structural;
+
 use crate::extraction::comment::CommentContext;
 
 /// A fixed-size vector of features computed from a comment and its context.
