@@ -1,0 +1,9 @@
+[package]
+name = "comment-lint-ml"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+comment-lint-core = { path = "../comment-lint-core" }
+ort = { workspace = true }
+anyhow = { workspace = true }

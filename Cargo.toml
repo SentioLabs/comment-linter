@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/comment-lint", "crates/comment-lint-core"]
+members = ["crates/comment-lint", "crates/comment-lint-core", "crates/comment-lint-ml"]
 resolver = "2"
 
 [workspace.dependencies]
@@ -23,3 +23,4 @@ regex = "1"
 ignore = "0.4"
 crossbeam-channel = "0.5"
 insta = { version = "1", features = ["yaml"] }
+ort = "2.0.0-rc.11"
