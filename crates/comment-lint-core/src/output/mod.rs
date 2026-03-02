@@ -5,6 +5,7 @@
 //! - [`json::JsonFormatter`] - JSONL (one JSON object per line) for tooling.
 //! - [`github::GithubFormatter`] - GitHub Actions workflow annotations.
 
+pub mod features_jsonl;
 pub mod github;
 pub mod json;
 pub mod text;

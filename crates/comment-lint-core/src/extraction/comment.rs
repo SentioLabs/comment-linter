@@ -3,12 +3,13 @@
 use std::path::PathBuf;
 
 use crate::types::{CommentKind, LanguageId};
+use serde::{Deserialize, Serialize};
 
 /// Full context of a single comment extracted from source code.
 ///
 /// Carries everything downstream analysis needs: the comment text, its
 /// position, the language it was written in, and surrounding source context.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommentContext {
     /// Path to the source file containing this comment.
     pub file_path: PathBuf,

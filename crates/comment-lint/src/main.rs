@@ -3,6 +3,7 @@ use std::process::ExitCode;
 
 use clap::Parser;
 use comment_lint_core::config::Config;
+use comment_lint_core::output::features_jsonl::FeaturesJsonlFormatter;
 use comment_lint_core::output::github::GithubFormatter;
 use comment_lint_core::output::json::JsonFormatter;
 use comment_lint_core::output::text::TextFormatter;
@@ -36,6 +37,10 @@ struct Cli {
     /// Path to config file (TOML)
     #[arg(long)]
     config: Option<PathBuf>,
+
+    /// Export all comment features as JSONL (for ML training data)
+    #[arg(long)]
+    export_features: bool,
 }
 
 fn main() -> ExitCode {
@@ -62,21 +67,28 @@ fn main() -> ExitCode {
         config.general.include_doc_comments = true;
     }
 
-    // 3. Create scorer (takes weights AND negative weights)
+    // 3. Select output formatter; --export-features overrides config to capture everything
+    let formatter: Box<dyn OutputFormatter> = if cli.export_features {
+        config.general.threshold = 0.0;
+        config.general.min_confidence = 0.0;
+        config.general.include_doc_comments = true;
+        Box::new(FeaturesJsonlFormatter)
+    } else {
+        match cli.format.as_str() {
+            "json" => Box::new(JsonFormatter),
+            "github" => Box::new(GithubFormatter),
+            _ => Box::new(TextFormatter),
+        }
+    };
+
+    // 4. Create scorer (takes weights AND negative weights)
     let scorer = HeuristicScorer::new(config.weights.clone(), config.negative.clone());
 
-    // 4. Create pipeline and run
+    // 5. Create pipeline and run
     let pipeline = Pipeline::new(config, Box::new(scorer));
     let result = pipeline.run(&cli.paths);
 
-    // 5. Select output formatter (unit structs, no constructor args)
-    let formatter: Box<dyn OutputFormatter> = match cli.format.as_str() {
-        "json" => Box::new(JsonFormatter),
-        "github" => Box::new(GithubFormatter),
-        _ => Box::new(TextFormatter),
-    };
-
-    // 6. Output results
+    // 6. Output results (renumbered after formatter selection moved earlier)
     let mut stdout = std::io::stdout().lock();
     for comment in &result.scored_comments {
         if let Err(e) = formatter.format_comment(comment, &mut stdout) {
