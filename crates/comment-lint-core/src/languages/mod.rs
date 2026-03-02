@@ -32,6 +32,17 @@ pub trait Language {
     ) -> Vec<CommentContext>;
 }
 
+/// Return a boxed [`Language`] implementation for the given [`LanguageId`].
+pub fn get_language(id: LanguageId) -> Box<dyn Language> {
+    match id {
+        LanguageId::Go => Box::new(go::GoLanguage),
+        LanguageId::Python => Box::new(python::PythonLanguage),
+        LanguageId::TypeScript => Box::new(typescript::TypeScriptLanguage),
+        LanguageId::JavaScript => Box::new(javascript::JavaScriptLanguage),
+        LanguageId::Rust => Box::new(rust_lang::RustLanguage),
+    }
+}
+
 /// Detect the programming language from a file path's extension.
 ///
 /// Returns `None` if the extension is not recognized.
