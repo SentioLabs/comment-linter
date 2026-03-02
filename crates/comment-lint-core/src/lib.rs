@@ -8,6 +8,7 @@ pub mod extraction;
 pub mod features;
 pub mod languages;
 pub mod output;
+pub mod pipeline;
 pub mod scoring;
 pub mod types;
 
