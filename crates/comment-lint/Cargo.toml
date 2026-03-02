@@ -1,0 +1,14 @@
+[package]
+name = "comment-lint"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "comment-lint"
+path = "src/main.rs"
+
+[dependencies]
+comment-lint-core = { path = "../comment-lint-core" }
+clap = { workspace = true }
+anyhow = { workspace = true }
+colored = { workspace = true }
