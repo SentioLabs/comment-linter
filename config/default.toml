@@ -1,0 +1,46 @@
+# comment-lint default configuration
+#
+# These values are the compiled-in defaults. Override any setting by placing
+# a comment-lint.toml in your project root or passing --config <path>.
+
+[general]
+threshold = 0.6
+min_confidence = 0.0
+include_doc_comments = false
+
+[weights]
+token_overlap_jaccard = 0.25
+identifier_substring_ratio = 0.20
+imperative_verb_noun = 0.15
+is_section_label = 0.10
+contains_literal_values = 0.05
+references_other_files = 0.05
+mirrors_data_structure = 0.05
+
+[negative]
+has_why_indicator = -0.30
+has_external_ref = -0.25
+is_doc_comment_on_public = -0.20
+
+[ignore]
+paths = [
+    "vendor/**",
+    "node_modules/**",
+    "*.generated.*",
+    "target/**",
+]
+comment_patterns = [
+    "^//go:generate",
+    "^//nolint",
+    "^# type:",
+    "^# noqa",
+    "^# pylint:",
+    "^// eslint-",
+    "^// @ts-",
+    "^// Copyright",
+    "^# Copyright",
+]
+
+[cache]
+enabled = true
+directory = ".comment-lint-cache"

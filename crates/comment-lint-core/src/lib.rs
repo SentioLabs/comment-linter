@@ -6,6 +6,7 @@
 pub mod extraction;
 pub mod features;
 pub mod languages;
+pub mod config;
 pub mod scoring;
 pub mod types;
 
