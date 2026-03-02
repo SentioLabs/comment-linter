@@ -20,6 +20,7 @@ toml = { workspace = true }
 regex = { workspace = true }
 ignore = { workspace = true }
 crossbeam-channel = { workspace = true }
+colored = { workspace = true }
 anyhow = { workspace = true }
 
 [dev-dependencies]

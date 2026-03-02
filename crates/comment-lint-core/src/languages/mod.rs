@@ -5,6 +5,12 @@ use std::path::Path;
 use crate::extraction::comment::CommentContext;
 use crate::types::LanguageId;
 
+pub mod go;
+pub mod javascript;
+pub mod python;
+pub mod rust_lang;
+pub mod typescript;
+
 /// Trait implemented by each supported language to provide tree-sitter
 /// integration and comment extraction.
 pub trait Language {
@@ -35,7 +41,7 @@ pub fn detect_language(path: &Path) -> Option<LanguageId> {
         "go" => Some(LanguageId::Go),
         "py" => Some(LanguageId::Python),
         "ts" | "tsx" => Some(LanguageId::TypeScript),
-        "js" | "jsx" => Some(LanguageId::JavaScript),
+        "js" | "jsx" | "mjs" | "cjs" => Some(LanguageId::JavaScript),
         "rs" => Some(LanguageId::Rust),
         _ => None,
     }

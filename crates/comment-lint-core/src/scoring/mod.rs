@@ -1,5 +1,7 @@
 //! Scoring trait for comment superfluousness analysis.
 
+pub mod heuristic;
+
 use crate::extraction::comment::CommentContext;
 use crate::features::{FeatureVector, ScoredComment};
 
