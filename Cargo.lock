@@ -163,6 +163,8 @@ dependencies = [
  "clap",
  "colored",
  "comment-lint-core",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]

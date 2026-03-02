@@ -12,3 +12,7 @@ comment-lint-core = { path = "../comment-lint-core" }
 clap = { workspace = true }
 anyhow = { workspace = true }
 colored = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"
+serde_json = { workspace = true }
