@@ -43,7 +43,7 @@ struct Cli {
     #[arg(long)]
     export_features: bool,
 
-    /// Scoring backend: "heuristic" (default) or "ml"
+    /// Scoring backend: "heuristic" (default), "ml", or "ensemble"
     #[arg(long, default_value = "heuristic")]
     scorer: String,
 
@@ -104,8 +104,17 @@ fn main() -> ExitCode {
                 }
             }
         }
+        "ensemble" => {
+            match create_ensemble_scorer(&cli, &config) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return ExitCode::from(2);
+                }
+            }
+        }
         other => {
-            eprintln!("error: unknown scorer '{other}', expected 'heuristic' or 'ml'");
+            eprintln!("error: unknown scorer '{other}', expected 'heuristic', 'ml', or 'ensemble'");
             return ExitCode::from(2);
         }
     };
@@ -167,6 +176,33 @@ fn create_ml_scorer(
     Ok(Box::new(scorer))
 }
 
+/// Create an ensemble scorer when the `ml` feature is enabled.
+#[cfg(feature = "ml")]
+fn create_ensemble_scorer(
+    cli: &Cli,
+    config: &Config,
+) -> Result<Box<dyn Scorer + Send + Sync>, String> {
+    use comment_lint_ml::ensemble::EnsembleScorer;
+    use comment_lint_ml::scorer::MLScorer;
+
+    // Resolve model path the same way as "ml"
+    let model_path = cli
+        .model_path
+        .as_ref()
+        .map(|p| p.to_string_lossy().into_owned())
+        .or_else(|| config.ml.model_path.clone())
+        .ok_or_else(|| {
+            "ensemble scorer requires a model path via --model-path or [ml].model_path in config"
+                .to_string()
+        })?;
+
+    let heuristic = HeuristicScorer::new(config.weights.clone(), config.negative.clone());
+    let ml = MLScorer::new(&model_path).map_err(|e| format!("failed to load ML model: {e}"))?;
+
+    let ensemble = EnsembleScorer::new(Box::new(heuristic), Box::new(ml), 0.6);
+    Ok(Box::new(ensemble))
+}
+
 /// Stub when the `ml` feature is not enabled.
 #[cfg(not(feature = "ml"))]
 fn create_ml_scorer(
@@ -174,4 +210,13 @@ fn create_ml_scorer(
     _config: &Config,
 ) -> Result<Box<dyn Scorer + Send + Sync>, String> {
     Err("ml scorer is not available; rebuild with --features ml".to_string())
+}
+
+/// Stub when the `ml` feature is not enabled.
+#[cfg(not(feature = "ml"))]
+fn create_ensemble_scorer(
+    _cli: &Cli,
+    _config: &Config,
+) -> Result<Box<dyn Scorer + Send + Sync>, String> {
+    Err("ensemble scorer is not available; rebuild with --features ml".to_string())
 }

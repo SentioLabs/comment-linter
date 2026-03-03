@@ -3,5 +3,6 @@
 //! This crate provides ONNX Runtime-based ML scoring as an alternative
 //! or complement to heuristic scoring from comment-lint-core.
 
+pub mod ensemble;
 pub mod scorer;
 pub mod tensor;
