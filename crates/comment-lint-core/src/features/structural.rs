@@ -9,7 +9,7 @@ use crate::types::CommentKind;
 /// - Rust: function_item, struct_item, enum_item, impl_item, trait_item, type_item
 /// - Python: function_definition, class_definition, decorated_definition
 /// - TS/JS: function_declaration, class_declaration, interface_declaration,
-///          type_alias_declaration, method_definition, lexical_declaration
+///   type_alias_declaration, method_definition, lexical_declaration
 pub const DECLARATION_NODE_KINDS: &[&str] = &[
     // Go
     "function_declaration",

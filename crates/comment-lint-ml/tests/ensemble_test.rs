@@ -279,8 +279,11 @@ fn ensemble_with_real_scorers() {
 
     let config = Config::default();
     let heuristic = HeuristicScorer::new(config.weights.clone(), config.negative.clone());
-    let model_path =
-        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/dummy_model.onnx").to_string();
+    let model_path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/fixtures/dummy_model.onnx"
+    )
+    .to_string();
     let ml = MLScorer::new(&model_path).expect("should load dummy model");
 
     let ensemble = EnsembleScorer::new(Box::new(heuristic), Box::new(ml), 0.6);

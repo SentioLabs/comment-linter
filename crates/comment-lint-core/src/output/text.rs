@@ -113,9 +113,9 @@ impl OutputFormatter for TextFormatter {
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
     use crate::output::tests::make_scored_comment;
     use crate::output::OutputFormatter;
+    use std::time::Duration;
 
     #[test]
     fn text_formatter_formats_comment_with_star_rating() {
@@ -129,8 +129,14 @@ mod tests {
         assert!(output.contains("src/main.rs"), "should contain file path");
         assert!(output.contains("42"), "should contain line number");
         assert!(output.contains("4"), "should contain column number");
-        assert!(output.contains("increment counter"), "should contain comment text");
-        assert!(output.contains("high token overlap"), "should contain reason");
+        assert!(
+            output.contains("increment counter"),
+            "should contain comment text"
+        );
+        assert!(
+            output.contains("high token overlap"),
+            "should contain reason"
+        );
     }
 
     #[test]
@@ -141,7 +147,10 @@ mod tests {
         formatter.format_comment(&comment, &mut buf).unwrap();
         let output = String::from_utf8(buf).unwrap();
         // score 0.65 is in 0.6..0.7 => 1 star
-        assert!(output.contains("\u{2605}"), "should contain at least one filled star");
+        assert!(
+            output.contains("\u{2605}"),
+            "should contain at least one filled star"
+        );
     }
 
     #[test]
@@ -193,11 +202,16 @@ mod tests {
     fn text_formatter_formats_summary() {
         let formatter = super::TextFormatter;
         let mut buf = Vec::new();
-        formatter.format_summary(100, 25, 10, Duration::from_millis(1234), None, &mut buf).unwrap();
+        formatter
+            .format_summary(100, 25, 10, Duration::from_millis(1234), None, &mut buf)
+            .unwrap();
         let output = String::from_utf8(buf).unwrap();
 
         assert!(output.contains("100"), "summary should show total comments");
-        assert!(output.contains("25"), "summary should show superfluous count");
+        assert!(
+            output.contains("25"),
+            "summary should show superfluous count"
+        );
         assert!(output.contains("10"), "summary should show file count");
     }
 }

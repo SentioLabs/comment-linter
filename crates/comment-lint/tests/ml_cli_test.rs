@@ -65,7 +65,8 @@ fn default_scorer_is_heuristic() {
 
     let code = output.status.code().unwrap_or(-1);
     assert_eq!(
-        code, 0,
+        code,
+        0,
         "default scorer (heuristic) should work normally, got exit code {}. stderr: {}",
         code,
         String::from_utf8_lossy(&output.stderr),
@@ -89,7 +90,8 @@ fn explicit_heuristic_scorer_works() {
 
     let code = output.status.code().unwrap_or(-1);
     assert_eq!(
-        code, 0,
+        code,
+        0,
         "--scorer heuristic should work, got exit code {}. stderr: {}",
         code,
         String::from_utf8_lossy(&output.stderr),
@@ -122,7 +124,8 @@ fn scorer_ml_without_feature_exits_with_error() {
 
     let code = output.status.code().unwrap_or(-1);
     assert_eq!(
-        code, 2,
+        code,
+        2,
         "--scorer ml without ml feature should exit with code 2, got {}. stderr: {}",
         code,
         String::from_utf8_lossy(&output.stderr),
@@ -153,7 +156,8 @@ fn invalid_scorer_value_exits_with_error() {
 
     let code = output.status.code().unwrap_or(-1);
     assert_eq!(
-        code, 2,
+        code,
+        2,
         "--scorer nonexistent should exit with code 2, got {}. stderr: {}",
         code,
         String::from_utf8_lossy(&output.stderr),
@@ -212,7 +216,8 @@ fn ml_scorer_with_invalid_model_path_exits_with_error() {
 
     let code = output.status.code().unwrap_or(-1);
     assert_eq!(
-        code, 2,
+        code,
+        2,
         "--scorer ml with invalid model path should exit with code 2, got {}. stderr: {}",
         code,
         String::from_utf8_lossy(&output.stderr),
@@ -271,7 +276,8 @@ fn ml_scorer_without_any_model_path_exits_with_error() {
 
     let code = output.status.code().unwrap_or(-1);
     assert_eq!(
-        code, 2,
+        code,
+        2,
         "--scorer ml without any model path should exit with code 2, got {}. stderr: {}",
         code,
         String::from_utf8_lossy(&output.stderr),

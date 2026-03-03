@@ -14,9 +14,8 @@ use regex::Regex;
 // ---------------------------------------------------------------------------
 
 /// Matches numbers with 2+ digits or quoted strings.
-static LITERAL_VALUES_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"\d{2,}|"[^"]+"|'[^']+'"#).expect("LITERAL_VALUES_RE")
-});
+static LITERAL_VALUES_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"\d{2,}|"[^"]+"|'[^']+'"#).expect("LITERAL_VALUES_RE"));
 
 /// Matches file-path patterns such as `foo/bar.go`, `../utils`, or
 /// `see file.ext`.
@@ -25,19 +24,16 @@ static FILE_REF_RE: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 /// Matches backtick-wrapped identifiers like `processPayment`.
-static BACKTICK_IDENT_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"`[A-Za-z_]\w+`").expect("BACKTICK_IDENT_RE")
-});
+static BACKTICK_IDENT_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"`[A-Za-z_]\w+`").expect("BACKTICK_IDENT_RE"));
 
 /// Matches PascalCase identifiers with 2+ humps (e.g. `GetUserById`).
-static PASCAL_CASE_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"\b[A-Z][a-z]+(?:[A-Z][a-z]+){1,}\b").expect("PASCAL_CASE_RE")
-});
+static PASCAL_CASE_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\b[A-Z][a-z]+(?:[A-Z][a-z]+){1,}\b").expect("PASCAL_CASE_RE"));
 
 /// Matches long snake_case identifiers with 3+ parts (e.g. `get_user_by_id`).
-static SNAKE_CASE_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"\b[a-z]+(?:_[a-z]+){2,}\b").expect("SNAKE_CASE_RE")
-});
+static SNAKE_CASE_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\b[a-z]+(?:_[a-z]+){2,}\b").expect("SNAKE_CASE_RE"));
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -157,7 +153,9 @@ mod tests {
 
     #[test]
     fn func_ref_backtick_identifier() {
-        assert!(references_specific_functions("calls `processPayment` internally"));
+        assert!(references_specific_functions(
+            "calls `processPayment` internally"
+        ));
     }
 
     #[test]
@@ -167,7 +165,9 @@ mod tests {
 
     #[test]
     fn func_ref_long_snake_case() {
-        assert!(references_specific_functions("see get_user_by_id for details"));
+        assert!(references_specific_functions(
+            "see get_user_by_id for details"
+        ));
     }
 
     #[test]
@@ -179,11 +179,7 @@ mod tests {
 
     #[test]
     fn mirrors_matching_fields() {
-        let identifiers: Vec<String> = vec![
-            "name".into(),
-            "age".into(),
-            "email".into(),
-        ];
+        let identifiers: Vec<String> = vec!["name".into(), "age".into(), "email".into()];
         assert!(mirrors_data_structure(
             "contains name, age, and email fields",
             &identifiers,
@@ -192,11 +188,7 @@ mod tests {
 
     #[test]
     fn mirrors_no_match() {
-        let identifiers: Vec<String> = vec![
-            "name".into(),
-            "age".into(),
-            "email".into(),
-        ];
+        let identifiers: Vec<String> = vec!["name".into(), "age".into(), "email".into()];
         assert!(!mirrors_data_structure("unrelated comment", &identifiers));
     }
 

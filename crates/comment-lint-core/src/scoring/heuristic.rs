@@ -436,10 +436,7 @@ mod tests {
             result.reasons
         );
         assert!(
-            result
-                .reasons
-                .iter()
-                .any(|r| r.contains("section_label")),
+            result.reasons.iter().any(|r| r.contains("section_label")),
             "Should contain 'section_label' reason, got: {:?}",
             result.reasons
         );

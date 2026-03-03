@@ -23,11 +23,7 @@ const TS_DECLARATION_KINDS: &[&str] = &[
 ];
 
 /// Node kinds that represent identifier nodes in TypeScript AST.
-const TS_IDENTIFIER_KINDS: &[&str] = &[
-    "identifier",
-    "property_identifier",
-    "type_identifier",
-];
+const TS_IDENTIFIER_KINDS: &[&str] = &["identifier", "property_identifier", "type_identifier"];
 
 /// TypeScript language keywords to detect near comments.
 const TS_KEYWORDS: &[&str] = &[
@@ -115,8 +111,7 @@ fn collect_comments(
             let surrounding_source = extract_surrounding_source(source_lines, line);
 
             // Collect nearby identifiers and keywords from the adjacent/surrounding nodes
-            let (nearby_identifiers, nearby_keywords) =
-                extract_nearby_context(&child, source);
+            let (nearby_identifiers, nearby_keywords) = extract_nearby_context(&child, source);
 
             comments.push(CommentContext {
                 file_path: file_path.to_path_buf(),
@@ -180,10 +175,7 @@ fn strip_block_comment(text: &str, open_delimiter: &str) -> String {
         })
         .collect();
 
-    cleaned
-        .join("\n")
-        .trim()
-        .to_string()
+    cleaned.join("\n").trim().to_string()
 }
 
 /// Find the adjacent declaration node (the next named sibling after the comment).
@@ -263,11 +255,7 @@ fn collect_identifiers_recursive(
 }
 
 /// Collect keywords found in the text of a node and its children.
-fn collect_keywords_from_node(
-    node: &tree_sitter::Node,
-    source: &str,
-    keywords: &mut Vec<String>,
-) {
+fn collect_keywords_from_node(node: &tree_sitter::Node, source: &str, keywords: &mut Vec<String>) {
     // Check direct children that are anonymous (keyword) nodes
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
@@ -485,7 +473,8 @@ function foo() {}
 
     #[test]
     fn adjacent_node_kind_set_for_function() {
-        let source = "/** Calculates sum */\nfunction sum(a: number, b: number): number { return a + b; }\n";
+        let source =
+            "/** Calculates sum */\nfunction sum(a: number, b: number): number { return a + b; }\n";
         let comments = parse_and_extract(source);
         assert_eq!(comments.len(), 1);
         assert_eq!(comments[0].adjacent_node_kind, "function_declaration");

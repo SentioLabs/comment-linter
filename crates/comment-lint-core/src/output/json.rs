@@ -25,8 +25,7 @@ impl OutputFormatter for JsonFormatter {
             "language": comment.context.language.name(),
             "reasons": comment.reasons,
         });
-        let line = serde_json::to_string(&value)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        let line = serde_json::to_string(&value).map_err(std::io::Error::other)?;
         writeln!(writer, "{}", line)
     }
 
@@ -49,17 +48,16 @@ impl OutputFormatter for JsonFormatter {
         if let Some(cpu) = cpu_time {
             value["cpu_ms"] = serde_json::Value::from(cpu.as_millis() as u64);
         }
-        let line = serde_json::to_string(&value)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        let line = serde_json::to_string(&value).map_err(std::io::Error::other)?;
         writeln!(writer, "{}", line)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
     use crate::output::tests::make_scored_comment;
     use crate::output::OutputFormatter;
+    use std::time::Duration;
 
     #[test]
     fn json_formatter_produces_valid_json() {
@@ -87,9 +85,15 @@ mod tests {
         assert!(obj.contains_key("file"), "should have 'file' field");
         assert!(obj.contains_key("line"), "should have 'line' field");
         assert!(obj.contains_key("column"), "should have 'column' field");
-        assert!(obj.contains_key("comment_text"), "should have 'comment_text' field");
+        assert!(
+            obj.contains_key("comment_text"),
+            "should have 'comment_text' field"
+        );
         assert!(obj.contains_key("score"), "should have 'score' field");
-        assert!(obj.contains_key("confidence"), "should have 'confidence' field");
+        assert!(
+            obj.contains_key("confidence"),
+            "should have 'confidence' field"
+        );
         assert!(obj.contains_key("language"), "should have 'language' field");
         assert!(obj.contains_key("reasons"), "should have 'reasons' field");
     }
@@ -132,7 +136,9 @@ mod tests {
     fn json_formatter_summary_has_type_field() {
         let formatter = super::JsonFormatter;
         let mut buf = Vec::new();
-        formatter.format_summary(100, 25, 10, Duration::from_millis(1234), None, &mut buf).unwrap();
+        formatter
+            .format_summary(100, 25, 10, Duration::from_millis(1234), None, &mut buf)
+            .unwrap();
         let output = String::from_utf8(buf).unwrap();
 
         let parsed: serde_json::Value = serde_json::from_str(output.trim()).unwrap();
@@ -150,6 +156,9 @@ mod tests {
         formatter.format_comment(&comment, &mut buf).unwrap();
         let output = String::from_utf8(buf).unwrap();
 
-        assert!(output.ends_with('\n'), "JSONL lines should end with newline");
+        assert!(
+            output.ends_with('\n'),
+            "JSONL lines should end with newline"
+        );
     }
 }

@@ -181,15 +181,15 @@ fn classify_and_strip(raw: &str) -> (String, CommentKind) {
 /// the leading ` * ` prefixes common in JSDoc-style comments.
 fn strip_block_markers(raw: &str) -> String {
     // Remove opening /** or /* and closing */
-    let s = if raw.starts_with("/**") {
-        &raw[3..]
-    } else if raw.starts_with("/*") {
-        &raw[2..]
+    let s = if let Some(stripped) = raw.strip_prefix("/**") {
+        stripped
+    } else if let Some(stripped) = raw.strip_prefix("/*") {
+        stripped
     } else {
         raw
     };
-    let s = if s.ends_with("*/") {
-        &s[..s.len() - 2]
+    let s = if let Some(stripped) = s.strip_suffix("*/") {
+        stripped
     } else {
         s
     };
@@ -205,8 +205,8 @@ fn strip_block_markers(raw: &str) -> String {
         .iter()
         .map(|line| {
             let trimmed = line.trim();
-            if trimmed.starts_with("* ") {
-                trimmed[2..].to_string()
+            if let Some(stripped) = trimmed.strip_prefix("* ") {
+                stripped.to_string()
             } else if trimmed == "*" {
                 String::new()
             } else {
@@ -217,7 +217,11 @@ fn strip_block_markers(raw: &str) -> String {
 
     // Remove leading/trailing empty lines
     let start = cleaned.iter().position(|l| !l.is_empty()).unwrap_or(0);
-    let end = cleaned.iter().rposition(|l| !l.is_empty()).map(|i| i + 1).unwrap_or(0);
+    let end = cleaned
+        .iter()
+        .rposition(|l| !l.is_empty())
+        .map(|i| i + 1)
+        .unwrap_or(0);
     cleaned[start..end].join("\n")
 }
 
@@ -305,11 +309,7 @@ fn extract_nearby_keywords(comment_node: tree_sitter::Node, source: &str) -> Vec
 ///
 /// In tree-sitter grammars, keywords typically appear as anonymous (unnamed)
 /// nodes whose text matches the keyword token.
-fn collect_keywords_recursive(
-    node: tree_sitter::Node,
-    source: &str,
-    keywords: &mut Vec<String>,
-) {
+fn collect_keywords_recursive(node: tree_sitter::Node, source: &str, keywords: &mut Vec<String>) {
     if !node.is_named() {
         if let Ok(text) = node.utf8_text(source.as_bytes()) {
             if JS_KEYWORDS.contains(&text) {

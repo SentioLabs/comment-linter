@@ -11,9 +11,30 @@ pub struct GoLanguage;
 
 /// Go keywords used for nearby keyword detection.
 const GO_KEYWORDS: &[&str] = &[
-    "break", "case", "chan", "const", "continue", "default", "defer", "else",
-    "fallthrough", "for", "func", "go", "goto", "if", "import", "interface",
-    "map", "package", "range", "return", "select", "struct", "switch", "type",
+    "break",
+    "case",
+    "chan",
+    "const",
+    "continue",
+    "default",
+    "defer",
+    "else",
+    "fallthrough",
+    "for",
+    "func",
+    "go",
+    "goto",
+    "if",
+    "import",
+    "interface",
+    "map",
+    "package",
+    "range",
+    "return",
+    "select",
+    "struct",
+    "switch",
+    "type",
     "var",
 ];
 
@@ -176,7 +197,7 @@ fn determine_comment_kind(
             let has_blank_line = (comment_end_row + 1..decl_start_row).any(|row| {
                 source_lines
                     .get(row)
-                    .map_or(false, |line| line.trim().is_empty())
+                    .is_some_and(|line| line.trim().is_empty())
             });
 
             if !has_blank_line {
@@ -270,11 +291,7 @@ fn extract_nearby_keywords(node: tree_sitter::Node, source: &str) -> Vec<String>
 }
 
 /// Recursively collect Go keyword tokens from a node subtree.
-fn collect_keywords_recursive(
-    node: tree_sitter::Node,
-    source: &str,
-    keywords: &mut Vec<String>,
-) {
+fn collect_keywords_recursive(node: tree_sitter::Node, source: &str, keywords: &mut Vec<String>) {
     // In tree-sitter-go, keywords appear as anonymous nodes with their text
     // matching Go keyword tokens (e.g. "func", "if", "return").
     if !node.is_named() {

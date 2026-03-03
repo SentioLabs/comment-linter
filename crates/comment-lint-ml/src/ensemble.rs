@@ -35,8 +35,7 @@ impl Scorer for EnsembleScorer {
         let h = self.heuristic.score(context, features);
         let m = self.ml.score(context, features);
 
-        let score =
-            (h.score * (1.0 - self.ml_weight) + m.score * self.ml_weight).clamp(0.0, 1.0);
+        let score = (h.score * (1.0 - self.ml_weight) + m.score * self.ml_weight).clamp(0.0, 1.0);
 
         // Confidence: higher when both scorers agree.
         let agreement = 1.0 - (h.score - m.score).abs();

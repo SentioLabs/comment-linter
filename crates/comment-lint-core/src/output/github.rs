@@ -47,9 +47,9 @@ impl OutputFormatter for GithubFormatter {
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
     use crate::output::tests::make_scored_comment;
     use crate::output::OutputFormatter;
+    use std::time::Duration;
 
     #[test]
     fn github_formatter_produces_warning_annotation() {
@@ -73,7 +73,10 @@ mod tests {
         formatter.format_comment(&comment, &mut buf).unwrap();
         let output = String::from_utf8(buf).unwrap();
 
-        assert!(output.contains("file=src/main.rs"), "should contain file parameter");
+        assert!(
+            output.contains("file=src/main.rs"),
+            "should contain file parameter"
+        );
         assert!(output.contains("line=42"), "should contain line parameter");
         assert!(output.contains("col=4"), "should contain col parameter");
     }
@@ -87,7 +90,10 @@ mod tests {
         let output = String::from_utf8(buf).unwrap();
 
         assert!(output.contains("score:"), "should contain score label");
-        assert!(output.contains("confidence:"), "should contain confidence label");
+        assert!(
+            output.contains("confidence:"),
+            "should contain confidence label"
+        );
     }
 
     #[test]
@@ -112,7 +118,9 @@ mod tests {
     fn github_formatter_summary_writes_nothing_or_comment() {
         let formatter = super::GithubFormatter;
         let mut buf = Vec::new();
-        formatter.format_summary(100, 25, 10, Duration::from_millis(1234), None, &mut buf).unwrap();
+        formatter
+            .format_summary(100, 25, 10, Duration::from_millis(1234), None, &mut buf)
+            .unwrap();
         // GitHub Actions does not use summary — either empty or a comment is acceptable
         let output = String::from_utf8(buf).unwrap();
         // Just ensure it does not produce a ::warning or ::error for the summary

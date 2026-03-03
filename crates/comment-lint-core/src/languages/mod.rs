@@ -101,10 +101,7 @@ mod tests {
 
     #[test]
     fn detect_language_rust() {
-        assert_eq!(
-            detect_language(Path::new("lib.rs")),
-            Some(LanguageId::Rust)
-        );
+        assert_eq!(detect_language(Path::new("lib.rs")), Some(LanguageId::Rust));
     }
 
     #[test]

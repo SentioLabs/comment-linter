@@ -21,15 +21,72 @@ static EXTERNAL_REF_RE: LazyLock<Regex> = LazyLock::new(|| {
 
 /// Imperative verbs commonly found at the start of code comments.
 const IMPERATIVE_VERBS: &[&str] = &[
-    "get", "set", "check", "create", "initialize", "init", "fetch", "update",
-    "delete", "remove", "add", "build", "parse", "validate", "compute",
-    "calculate", "convert", "handle", "process", "return", "send", "load",
-    "save", "store", "open", "close", "start", "stop", "run", "execute",
-    "read", "write", "find", "search", "sort", "filter", "map", "reduce",
-    "use", "call", "wait", "define", "configure", "apply", "ensure", "verify",
-    "print", "log", "append", "insert", "merge", "copy", "format", "generate",
-    "render", "connect", "disconnect", "register", "subscribe", "publish",
-    "listen", "emit", "dispatch", "setup", "wrap", "mount",
+    "get",
+    "set",
+    "check",
+    "create",
+    "initialize",
+    "init",
+    "fetch",
+    "update",
+    "delete",
+    "remove",
+    "add",
+    "build",
+    "parse",
+    "validate",
+    "compute",
+    "calculate",
+    "convert",
+    "handle",
+    "process",
+    "return",
+    "send",
+    "load",
+    "save",
+    "store",
+    "open",
+    "close",
+    "start",
+    "stop",
+    "run",
+    "execute",
+    "read",
+    "write",
+    "find",
+    "search",
+    "sort",
+    "filter",
+    "map",
+    "reduce",
+    "use",
+    "call",
+    "wait",
+    "define",
+    "configure",
+    "apply",
+    "ensure",
+    "verify",
+    "print",
+    "log",
+    "append",
+    "insert",
+    "merge",
+    "copy",
+    "format",
+    "generate",
+    "render",
+    "connect",
+    "disconnect",
+    "register",
+    "subscribe",
+    "publish",
+    "listen",
+    "emit",
+    "dispatch",
+    "setup",
+    "wrap",
+    "mount",
 ];
 
 /// Characters used as visual dividers in section labels.
@@ -126,7 +183,7 @@ pub fn verb_noun_matches_identifier(text: &str, nearby_identifiers: &[String]) -
         // Split identifier by snake_case and camelCase into lowercased parts
         let parts: Vec<String> = ident
             .split('_')
-            .flat_map(|segment| split_camel_case(segment))
+            .flat_map(split_camel_case)
             .map(|p| p.to_lowercase())
             .filter(|p| p.len() > 1)
             .collect();
@@ -185,10 +242,7 @@ pub struct SemanticFeatures {
 }
 
 /// Extract all semantic features from `text` given `nearby_identifiers`.
-pub fn extract_semantic_features(
-    text: &str,
-    nearby_identifiers: &[String],
-) -> SemanticFeatures {
+pub fn extract_semantic_features(text: &str, nearby_identifiers: &[String]) -> SemanticFeatures {
     SemanticFeatures {
         has_why_indicator: has_why_indicator(text),
         has_external_ref: has_external_ref(text),
@@ -294,7 +348,10 @@ mod tests {
         // "validate input data records" -> nouns: ["input", "data", "records"]
         // identifiers has none -> 0/3 = 0% -> false
         let identifiers = vec!["something".to_string()];
-        assert!(!imperative_verb_noun("validate input data records", &identifiers));
+        assert!(!imperative_verb_noun(
+            "validate input data records",
+            &identifiers
+        ));
     }
 
     #[test]
@@ -345,7 +402,10 @@ mod tests {
         // "DeleteUserByAuth0ID" → parts: ["delete", "user", "by", "auth0", "id"]
         // verb matches first part, "user" matches second → true
         let identifiers = vec!["DeleteUserByAuth0ID".to_string()];
-        assert!(verb_noun_matches_identifier("delete user from database", &identifiers));
+        assert!(verb_noun_matches_identifier(
+            "delete user from database",
+            &identifiers
+        ));
     }
 
     #[test]
@@ -371,7 +431,10 @@ mod tests {
     #[test]
     fn verb_noun_matches_identifier_non_imperative() {
         let identifiers = vec!["TheUser".to_string()];
-        assert!(!verb_noun_matches_identifier("The user is logged in", &identifiers));
+        assert!(!verb_noun_matches_identifier(
+            "The user is logged in",
+            &identifiers
+        ));
     }
 
     #[test]
@@ -387,7 +450,10 @@ mod tests {
         // "getUserFromDB" → parts: ["get", "user", "from", "db"]
         // verb matches first part, "user" matches second → true
         let identifiers = vec!["getUserFromDB".to_string()];
-        assert!(verb_noun_matches_identifier("get the user from the database", &identifiers));
+        assert!(verb_noun_matches_identifier(
+            "get the user from the database",
+            &identifiers
+        ));
     }
 
     // ── is_section_label ────────────────────────────────────────────
@@ -409,7 +475,9 @@ mod tests {
 
     #[test]
     fn section_label_long_sentence() {
-        assert!(!is_section_label("This is a long sentence that describes something in detail"));
+        assert!(!is_section_label(
+            "This is a long sentence that describes something in detail"
+        ));
     }
 
     #[test]

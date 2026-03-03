@@ -15,8 +15,8 @@ impl OutputFormatter for FeaturesJsonlFormatter {
         comment: &ScoredComment,
         writer: &mut dyn Write,
     ) -> std::io::Result<()> {
-        let features_value = serde_json::to_value(&comment.features)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        let features_value =
+            serde_json::to_value(&comment.features).map_err(std::io::Error::other)?;
 
         let value = json!({
             "file": comment.context.file_path.display().to_string(),
@@ -30,8 +30,7 @@ impl OutputFormatter for FeaturesJsonlFormatter {
             "features": features_value,
         });
 
-        let line = serde_json::to_string(&value)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        let line = serde_json::to_string(&value).map_err(std::io::Error::other)?;
         writeln!(writer, "{}", line)
     }
 
@@ -50,9 +49,9 @@ impl OutputFormatter for FeaturesJsonlFormatter {
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
     use crate::output::tests::make_scored_comment;
     use crate::output::OutputFormatter;
+    use std::time::Duration;
 
     #[test]
     fn features_jsonl_produces_valid_json() {
@@ -81,9 +80,18 @@ mod tests {
         assert!(obj.contains_key("line"), "should have 'line' field");
         assert!(obj.contains_key("column"), "should have 'column' field");
         assert!(obj.contains_key("language"), "should have 'language' field");
-        assert!(obj.contains_key("comment_text"), "should have 'comment_text' field");
-        assert!(obj.contains_key("comment_kind"), "should have 'comment_kind' field");
-        assert!(obj.contains_key("heuristic_score"), "should have 'heuristic_score' field");
+        assert!(
+            obj.contains_key("comment_text"),
+            "should have 'comment_text' field"
+        );
+        assert!(
+            obj.contains_key("comment_kind"),
+            "should have 'comment_kind' field"
+        );
+        assert!(
+            obj.contains_key("heuristic_score"),
+            "should have 'heuristic_score' field"
+        );
         assert!(
             obj.contains_key("heuristic_confidence"),
             "should have 'heuristic_confidence' field"
@@ -118,7 +126,9 @@ mod tests {
         let output = String::from_utf8(buf).unwrap();
 
         let parsed: serde_json::Value = serde_json::from_str(output.trim()).unwrap();
-        let features = parsed["features"].as_object().expect("features should be an object");
+        let features = parsed["features"]
+            .as_object()
+            .expect("features should be an object");
 
         assert!(
             features.contains_key("token_overlap_jaccard"),
@@ -193,7 +203,10 @@ mod tests {
         formatter.format_comment(&comment, &mut buf).unwrap();
         let output = String::from_utf8(buf).unwrap();
 
-        assert!(output.ends_with('\n'), "JSONL lines should end with newline");
+        assert!(
+            output.ends_with('\n'),
+            "JSONL lines should end with newline"
+        );
     }
 
     #[test]
@@ -215,10 +228,16 @@ mod tests {
     fn features_jsonl_summary_is_noop() {
         let formatter = super::FeaturesJsonlFormatter;
         let mut buf = Vec::new();
-        formatter.format_summary(100, 25, 10, Duration::from_millis(1234), None, &mut buf).unwrap();
+        formatter
+            .format_summary(100, 25, 10, Duration::from_millis(1234), None, &mut buf)
+            .unwrap();
         let output = String::from_utf8(buf).unwrap();
 
-        assert!(output.is_empty(), "summary should be a no-op, got: {}", output);
+        assert!(
+            output.is_empty(),
+            "summary should be a no-op, got: {}",
+            output
+        );
     }
 
     #[test]

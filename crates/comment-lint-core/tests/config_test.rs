@@ -190,7 +190,10 @@ threshold = 0.9
         (cfg.weights.token_overlap_jaccard - 0.25).abs() < f64::EPSILON,
         "Non-overridden weights should keep defaults"
     );
-    assert!(cfg.cache.enabled, "Non-overridden cache should keep default");
+    assert!(
+        cfg.cache.enabled,
+        "Non-overridden cache should keep default"
+    );
 }
 
 #[test]

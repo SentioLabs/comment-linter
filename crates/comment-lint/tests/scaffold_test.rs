@@ -60,10 +60,7 @@ fn version_flag_shows_version() {
         .output()
         .expect("failed to execute");
 
-    assert!(
-        output.status.success(),
-        "version should exit with code 0"
-    );
+    assert!(output.status.success(), "version should exit with code 0");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
@@ -76,9 +73,7 @@ fn version_flag_shows_version() {
 
 #[test]
 fn no_args_exits_with_error() {
-    let output = comment_lint_cmd()
-        .output()
-        .expect("failed to execute");
+    let output = comment_lint_cmd().output().expect("failed to execute");
 
     assert!(
         !output.status.success(),
@@ -93,7 +88,8 @@ fn superfluous_comment_exits_with_code_1() {
     let dir = tempfile::tempdir().expect("temp dir");
     // Use multi-line format so tree-sitter parses the comment correctly.
     // Include --include-doc-comments because Go comments before functions are doc comments.
-    let go_src = "package main\n\n// increment counter\nfunc incrementCounter() {\n    counter++\n}\n";
+    let go_src =
+        "package main\n\n// increment counter\nfunc incrementCounter() {\n    counter++\n}\n";
     let path = write_temp_file(&dir, "main.go", go_src);
 
     let output = comment_lint_cmd()
@@ -108,7 +104,8 @@ fn superfluous_comment_exits_with_code_1() {
 
     let code = output.status.code().unwrap_or(-1);
     assert_eq!(
-        code, 1,
+        code,
+        1,
         "should exit with code 1 when superfluous comments found, got {}. stdout: {}, stderr: {}",
         code,
         String::from_utf8_lossy(&output.stdout),
@@ -132,7 +129,8 @@ fn clean_file_exits_with_code_0() {
 
     let code = output.status.code().unwrap_or(-1);
     assert_eq!(
-        code, 0,
+        code,
+        0,
         "should exit with code 0 when no superfluous comments found, got {}. stderr: {}",
         code,
         String::from_utf8_lossy(&output.stderr),
@@ -144,7 +142,8 @@ fn clean_file_exits_with_code_0() {
 #[test]
 fn json_format_produces_valid_json() {
     let dir = tempfile::tempdir().expect("temp dir");
-    let go_src = "package main\n\n// increment counter\nfunc incrementCounter() {\n    counter++\n}\n";
+    let go_src =
+        "package main\n\n// increment counter\nfunc incrementCounter() {\n    counter++\n}\n";
     let path = write_temp_file(&dir, "main.go", go_src);
 
     let output = comment_lint_cmd()
@@ -182,7 +181,8 @@ fn json_format_produces_valid_json() {
 #[test]
 fn github_format_produces_annotations() {
     let dir = tempfile::tempdir().expect("temp dir");
-    let go_src = "package main\n\n// increment counter\nfunc incrementCounter() {\n    counter++\n}\n";
+    let go_src =
+        "package main\n\n// increment counter\nfunc incrementCounter() {\n    counter++\n}\n";
     let path = write_temp_file(&dir, "main.go", go_src);
 
     let output = comment_lint_cmd()
@@ -210,7 +210,8 @@ fn github_format_produces_annotations() {
 #[test]
 fn high_threshold_filters_results() {
     let dir = tempfile::tempdir().expect("temp dir");
-    let go_src = "package main\n\n// increment counter\nfunc incrementCounter() {\n    counter++\n}\n";
+    let go_src =
+        "package main\n\n// increment counter\nfunc incrementCounter() {\n    counter++\n}\n";
     let path = write_temp_file(&dir, "main.go", go_src);
 
     let output = comment_lint_cmd()
@@ -235,13 +236,10 @@ fn explicit_config_file_overrides_threshold() {
     let dir = tempfile::tempdir().expect("temp dir");
 
     // Write a config that sets threshold very high
-    let config_path = write_temp_file(
-        &dir,
-        "custom.toml",
-        "[general]\nthreshold = 0.99\n",
-    );
+    let config_path = write_temp_file(&dir, "custom.toml", "[general]\nthreshold = 0.99\n");
 
-    let go_src = "package main\n\n// increment counter\nfunc incrementCounter() {\n    counter++\n}\n";
+    let go_src =
+        "package main\n\n// increment counter\nfunc incrementCounter() {\n    counter++\n}\n";
     let file_path = write_temp_file(&dir, "main.go", go_src);
 
     let output = comment_lint_cmd()
@@ -272,7 +270,8 @@ fn cli_threshold_overrides_config() {
         "[general]\nthreshold = 0.0\nmin_confidence = 0.0\n",
     );
 
-    let go_src = "package main\n\n// increment counter\nfunc incrementCounter() {\n    counter++\n}\n";
+    let go_src =
+        "package main\n\n// increment counter\nfunc incrementCounter() {\n    counter++\n}\n";
     let file_path = write_temp_file(&dir, "main.go", go_src);
 
     // CLI overrides with high threshold
@@ -310,7 +309,8 @@ fn invalid_config_path_exits_with_code_2() {
 
     let code = output.status.code().unwrap_or(-1);
     assert_eq!(
-        code, 2,
+        code,
+        2,
         "invalid config path should exit with code 2, got {}. stderr: {}",
         code,
         String::from_utf8_lossy(&output.stderr),

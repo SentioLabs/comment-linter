@@ -125,7 +125,7 @@ impl Pipeline {
             } else if path.is_dir() {
                 if use_gitignore {
                     for entry in WalkBuilder::new(path).build().filter_map(|e| e.ok()) {
-                        if entry.file_type().map_or(false, |ft| ft.is_file()) {
+                        if entry.file_type().is_some_and(|ft| ft.is_file()) {
                             files.push(entry.into_path());
                         }
                     }
@@ -198,8 +198,7 @@ impl Pipeline {
     fn extract_features(&self, ctx: &crate::extraction::comment::CommentContext) -> FeatureVector {
         let (jaccard, substr_ratio, token_count) = extract_lexical_features(ctx);
         let structural = extract_structural_features(ctx);
-        let semantic =
-            extract_semantic_features(&ctx.comment_text, &ctx.nearby_identifiers);
+        let semantic = extract_semantic_features(&ctx.comment_text, &ctx.nearby_identifiers);
         let cross_ref =
             extract_cross_reference_features(&ctx.comment_text, &ctx.nearby_identifiers);
 
@@ -228,9 +227,7 @@ impl Pipeline {
     /// Check if a file path matches any of the configured ignore patterns.
     fn is_ignored(&self, path: &Path) -> bool {
         let path_str = path.to_string_lossy();
-        self.ignore_regexes
-            .iter()
-            .any(|re| re.is_match(&path_str))
+        self.ignore_regexes.iter().any(|re| re.is_match(&path_str))
     }
 
     /// Check if a comment's text matches any of the configured comment ignore patterns.
@@ -404,7 +401,7 @@ func incrementCounter() {
         config_low.ignore.comment_patterns = vec![];
 
         let pipeline_low = make_pipeline(config_low);
-        let result_low = pipeline_low.run(&[path.clone()]);
+        let result_low = pipeline_low.run(std::slice::from_ref(&path));
         let count_low = result_low.scored_comments.len();
 
         // Run with threshold=1.0 -- should filter out everything
@@ -452,7 +449,7 @@ func incrementCounter() {
         config_low.ignore.comment_patterns = vec![];
 
         let pipeline_low = make_pipeline(config_low);
-        let result_low = pipeline_low.run(&[path.clone()]);
+        let result_low = pipeline_low.run(std::slice::from_ref(&path));
         let count_low = result_low.scored_comments.len();
 
         // Run with min_confidence=1.0 -- should filter everything
@@ -499,7 +496,7 @@ fn another_function() {}
         config_no_doc.ignore.comment_patterns = vec![];
 
         let pipeline_no_doc = make_pipeline(config_no_doc);
-        let result_no_doc = pipeline_no_doc.run(&[path.clone()]);
+        let result_no_doc = pipeline_no_doc.run(std::slice::from_ref(&path));
 
         // include_doc_comments = true
         let mut config_with_doc = Config::default();
@@ -613,11 +610,18 @@ func decrementCounter() {}
         let pipeline = make_pipeline(config);
         let files = pipeline.discover_files(&[dir.path().to_path_buf()]);
 
-        let has_included = files.iter().any(|p| p.to_string_lossy().contains("included.go"));
-        let has_excluded = files.iter().any(|p| p.to_string_lossy().contains("excluded.go"));
+        let has_included = files
+            .iter()
+            .any(|p| p.to_string_lossy().contains("included.go"));
+        let has_excluded = files
+            .iter()
+            .any(|p| p.to_string_lossy().contains("excluded.go"));
 
         assert!(has_included, "included.go should be discovered");
-        assert!(!has_excluded, "generated/excluded.go should be skipped by .gitignore");
+        assert!(
+            !has_excluded,
+            "generated/excluded.go should be skipped by .gitignore"
+        );
     }
 
     #[test]
@@ -641,10 +645,17 @@ func decrementCounter() {}
         let pipeline = make_pipeline(config);
         let files = pipeline.discover_files(&[dir.path().to_path_buf()]);
 
-        let has_included = files.iter().any(|p| p.to_string_lossy().contains("included.go"));
-        let has_excluded = files.iter().any(|p| p.to_string_lossy().contains("excluded.go"));
+        let has_included = files
+            .iter()
+            .any(|p| p.to_string_lossy().contains("included.go"));
+        let has_excluded = files
+            .iter()
+            .any(|p| p.to_string_lossy().contains("excluded.go"));
 
         assert!(has_included, "included.go should be discovered");
-        assert!(has_excluded, "generated/excluded.go should also be discovered when gitignore is disabled");
+        assert!(
+            has_excluded,
+            "generated/excluded.go should also be discovered when gitignore is disabled"
+        );
     }
 }

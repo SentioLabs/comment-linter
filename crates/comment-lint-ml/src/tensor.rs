@@ -34,26 +34,30 @@ pub const TENSOR_DIM: usize = 16;
 /// The `adjacent_node_kind` string field is **skipped**.
 pub fn feature_vector_to_tensor(features: &FeatureVector) -> Vec<f32> {
     let bool_to_f32 = |b: bool| -> f32 {
-        if b { 1.0 } else { 0.0 }
+        if b {
+            1.0
+        } else {
+            0.0
+        }
     };
 
     vec![
-        features.token_overlap_jaccard,                          // 0
-        features.identifier_substring_ratio,                     // 1
-        features.comment_token_count as f32,                     // 2
-        bool_to_f32(features.is_doc_comment),                    // 3
-        bool_to_f32(features.is_before_declaration),             // 4
-        bool_to_f32(features.is_inline),                         // 5
-        features.nesting_depth as f32,                           // 6
-        bool_to_f32(features.has_why_indicator),                 // 7
-        bool_to_f32(features.has_external_ref),                  // 8
-        bool_to_f32(features.imperative_verb_noun),              // 9
-        bool_to_f32(features.is_section_label),                  // 10
-        bool_to_f32(features.contains_literal_values),           // 11
-        bool_to_f32(features.references_other_files),            // 12
-        bool_to_f32(features.references_specific_functions),     // 13
-        bool_to_f32(features.mirrors_data_structure),            // 14
-        features.comment_code_age_ratio.unwrap_or(0.0),          // 15
+        features.token_overlap_jaccard,                      // 0
+        features.identifier_substring_ratio,                 // 1
+        features.comment_token_count as f32,                 // 2
+        bool_to_f32(features.is_doc_comment),                // 3
+        bool_to_f32(features.is_before_declaration),         // 4
+        bool_to_f32(features.is_inline),                     // 5
+        features.nesting_depth as f32,                       // 6
+        bool_to_f32(features.has_why_indicator),             // 7
+        bool_to_f32(features.has_external_ref),              // 8
+        bool_to_f32(features.imperative_verb_noun),          // 9
+        bool_to_f32(features.is_section_label),              // 10
+        bool_to_f32(features.contains_literal_values),       // 11
+        bool_to_f32(features.references_other_files),        // 12
+        bool_to_f32(features.references_specific_functions), // 13
+        bool_to_f32(features.mirrors_data_structure),        // 14
+        features.comment_code_age_ratio.unwrap_or(0.0),      // 15
     ]
 }
 
@@ -126,8 +130,16 @@ mod tests {
 
         let tensor = feature_vector_to_tensor(&fv);
 
-        assert!((tensor[0] - 0.75).abs() < f32::EPSILON, "index 0: expected 0.75, got {}", tensor[0]);
-        assert!((tensor[1] - 0.3).abs() < f32::EPSILON, "index 1: expected 0.3, got {}", tensor[1]);
+        assert!(
+            (tensor[0] - 0.75).abs() < f32::EPSILON,
+            "index 0: expected 0.75, got {}",
+            tensor[0]
+        );
+        assert!(
+            (tensor[1] - 0.3).abs() < f32::EPSILON,
+            "index 1: expected 0.3, got {}",
+            tensor[1]
+        );
     }
 
     #[test]
@@ -146,7 +158,11 @@ mod tests {
     fn test_option_none_encodes_as_zero() {
         let fv = zero_features(); // comment_code_age_ratio is None
         let tensor = feature_vector_to_tensor(&fv);
-        assert_eq!(tensor[15], 0.0, "index 15: expected 0.0 for None, got {}", tensor[15]);
+        assert_eq!(
+            tensor[15], 0.0,
+            "index 15: expected 0.0 for None, got {}",
+            tensor[15]
+        );
     }
 
     #[test]
@@ -156,7 +172,11 @@ mod tests {
 
         let tensor = feature_vector_to_tensor(&fv);
 
-        assert!((tensor[15] - 0.8).abs() < f32::EPSILON, "index 15: expected 0.8, got {}", tensor[15]);
+        assert!(
+            (tensor[15] - 0.8).abs() < f32::EPSILON,
+            "index 15: expected 0.8, got {}",
+            tensor[15]
+        );
     }
 
     #[test]

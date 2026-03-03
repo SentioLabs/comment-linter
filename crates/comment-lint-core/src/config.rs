@@ -9,6 +9,7 @@ use std::path::Path;
 /// Top-level configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
+#[derive(Default)]
 pub struct Config {
     pub general: GeneralConfig,
     pub weights: WeightsConfig,
@@ -70,21 +71,9 @@ pub struct CacheConfig {
 /// ML scorer configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
+#[derive(Default)]
 pub struct MlConfig {
     pub model_path: Option<String>,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            general: GeneralConfig::default(),
-            weights: WeightsConfig::default(),
-            negative: NegativeWeights::default(),
-            ignore: IgnoreConfig::default(),
-            cache: CacheConfig::default(),
-            ml: MlConfig::default(),
-        }
-    }
 }
 
 impl Default for GeneralConfig {
@@ -153,12 +142,6 @@ impl Default for CacheConfig {
             enabled: true,
             directory: ".comment-lint-cache".to_string(),
         }
-    }
-}
-
-impl Default for MlConfig {
-    fn default() -> Self {
-        Self { model_path: None }
     }
 }
 
@@ -361,10 +344,7 @@ directory = "/tmp/cache"
             (cfg.weights.token_overlap_jaccard - 0.25).abs() < f64::EPSILON,
             "Empty TOML should give default token_overlap_jaccard"
         );
-        assert!(
-            cfg.cache.enabled,
-            "Empty TOML should give cache enabled"
-        );
+        assert!(cfg.cache.enabled, "Empty TOML should give cache enabled");
     }
 
     #[test]

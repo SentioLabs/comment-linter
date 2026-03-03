@@ -41,9 +41,8 @@ fn run_export(fixture_content: &str) -> Vec<serde_json::Value> {
         .lines()
         .filter(|l| !l.is_empty())
         .map(|l| {
-            serde_json::from_str(l).unwrap_or_else(|e| {
-                panic!("failed to parse JSONL line: {}\nline: {}", e, l)
-            })
+            serde_json::from_str(l)
+                .unwrap_or_else(|e| panic!("failed to parse JSONL line: {}\nline: {}", e, l))
         })
         .collect()
 }
@@ -61,7 +60,10 @@ fn test_export_features_produces_valid_jsonl() {
         "export-features should produce at least one JSONL line"
     );
     for record in &records {
-        assert!(record.is_object(), "each JSONL line should be a JSON object");
+        assert!(
+            record.is_object(),
+            "each JSONL line should be a JSON object"
+        );
     }
 }
 
@@ -78,8 +80,14 @@ fn test_export_features_has_required_fields() {
         assert!(obj.contains_key("line"), "should have 'line' field");
         assert!(obj.contains_key("column"), "should have 'column' field");
         assert!(obj.contains_key("language"), "should have 'language' field");
-        assert!(obj.contains_key("comment_text"), "should have 'comment_text' field");
-        assert!(obj.contains_key("comment_kind"), "should have 'comment_kind' field");
+        assert!(
+            obj.contains_key("comment_text"),
+            "should have 'comment_text' field"
+        );
+        assert!(
+            obj.contains_key("comment_kind"),
+            "should have 'comment_kind' field"
+        );
         assert!(
             obj.contains_key("heuristic_score"),
             "should have 'heuristic_score' field"

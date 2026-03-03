@@ -26,9 +26,9 @@ const DECLARATION_KINDS: &[&str] = &[
 
 /// Rust keywords to collect from surrounding context.
 const RUST_KEYWORDS: &[&str] = &[
-    "fn", "struct", "enum", "impl", "trait", "pub", "let", "mut", "const", "static", "mod",
-    "use", "type", "where", "return", "match", "if", "else", "for", "while", "loop", "async",
-    "await", "unsafe", "extern", "crate", "self", "super",
+    "fn", "struct", "enum", "impl", "trait", "pub", "let", "mut", "const", "static", "mod", "use",
+    "type", "where", "return", "match", "if", "else", "for", "while", "loop", "async", "await",
+    "unsafe", "extern", "crate", "self", "super",
 ];
 
 impl Language for RustLanguage {
@@ -196,10 +196,7 @@ fn extract_surrounding_source(source: &str, comment_row: usize) -> String {
 }
 
 /// Extract identifiers from nearby declarations (siblings and children).
-fn extract_nearby_identifiers(
-    node: tree_sitter::Node,
-    source: &str,
-) -> Vec<String> {
+fn extract_nearby_identifiers(node: tree_sitter::Node, source: &str) -> Vec<String> {
     let mut identifiers = Vec::new();
     // Look at the next sibling declaration
     let mut sibling = node.next_named_sibling();
@@ -252,10 +249,7 @@ fn collect_identifiers_from_node(
 }
 
 /// Extract language keywords from nearby source context.
-fn extract_nearby_keywords(
-    node: tree_sitter::Node,
-    source: &str,
-) -> Vec<String> {
+fn extract_nearby_keywords(node: tree_sitter::Node, source: &str) -> Vec<String> {
     let mut keywords = Vec::new();
     let start_row = node.start_position().row;
     let lines: Vec<&str> = source.lines().collect();
@@ -349,10 +343,7 @@ mod tests {
         let comments = parse_and_extract(source);
         assert_eq!(comments.len(), 1);
         assert_eq!(comments[0].comment_kind, CommentKind::Doc);
-        assert_eq!(
-            comments[0].comment_text.trim(),
-            "Module-level doc comment"
-        );
+        assert_eq!(comments[0].comment_text.trim(), "Module-level doc comment");
     }
 
     #[test]

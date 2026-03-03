@@ -14,7 +14,11 @@ use comment_lint_core::scoring::heuristic::HeuristicScorer;
 use comment_lint_core::scoring::Scorer;
 
 #[derive(Parser, Debug)]
-#[command(name = "comment-lint", version, about = "Detect superfluous code comments")]
+#[command(
+    name = "comment-lint",
+    version,
+    about = "Detect superfluous code comments"
+)]
 struct Cli {
     /// Files or directories to scan
     #[arg(required = true)]
@@ -100,27 +104,24 @@ fn main() -> ExitCode {
 
     // 4. Create scorer based on --scorer flag
     let scorer: Box<dyn Scorer + Send + Sync> = match cli.scorer.as_str() {
-        "heuristic" => {
-            Box::new(HeuristicScorer::new(config.weights.clone(), config.negative.clone()))
-        }
-        "ml" => {
-            match create_ml_scorer(&cli, &config) {
-                Ok(s) => s,
-                Err(e) => {
-                    eprintln!("error: {e}");
-                    return ExitCode::from(2);
-                }
+        "heuristic" => Box::new(HeuristicScorer::new(
+            config.weights.clone(),
+            config.negative.clone(),
+        )),
+        "ml" => match create_ml_scorer(&cli, &config) {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("error: {e}");
+                return ExitCode::from(2);
             }
-        }
-        "ensemble" => {
-            match create_ensemble_scorer(&cli, &config) {
-                Ok(s) => s,
-                Err(e) => {
-                    eprintln!("error: {e}");
-                    return ExitCode::from(2);
-                }
+        },
+        "ensemble" => match create_ensemble_scorer(&cli, &config) {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("error: {e}");
+                return ExitCode::from(2);
             }
-        }
+        },
         other => {
             eprintln!("error: unknown scorer '{other}', expected 'heuristic', 'ml', or 'ensemble'");
             return ExitCode::from(2);
@@ -169,10 +170,7 @@ fn main() -> ExitCode {
 
 /// Create an ML scorer when the `ml` feature is enabled.
 #[cfg(feature = "ml")]
-fn create_ml_scorer(
-    cli: &Cli,
-    config: &Config,
-) -> Result<Box<dyn Scorer + Send + Sync>, String> {
+fn create_ml_scorer(cli: &Cli, config: &Config) -> Result<Box<dyn Scorer + Send + Sync>, String> {
     use comment_lint_ml::scorer::MLScorer;
 
     // CLI --model-path takes priority, then config [ml].model_path
@@ -219,10 +217,7 @@ fn create_ensemble_scorer(
 
 /// Stub when the `ml` feature is not enabled.
 #[cfg(not(feature = "ml"))]
-fn create_ml_scorer(
-    _cli: &Cli,
-    _config: &Config,
-) -> Result<Box<dyn Scorer + Send + Sync>, String> {
+fn create_ml_scorer(_cli: &Cli, _config: &Config) -> Result<Box<dyn Scorer + Send + Sync>, String> {
     Err("ml scorer is not available; rebuild with --features ml".to_string())
 }
 
@@ -249,5 +244,7 @@ fn cpu_time() -> Option<Duration> {
     let stime: u64 = fields[14].parse().ok()?;
     let ticks_per_sec = 100u64; // sysconf(_SC_CLK_TCK) is 100 on virtually all Linux
     let total_ticks = utime + stime;
-    Some(Duration::from_nanos(total_ticks * 1_000_000_000 / ticks_per_sec))
+    Some(Duration::from_nanos(
+        total_ticks * 1_000_000_000 / ticks_per_sec,
+    ))
 }

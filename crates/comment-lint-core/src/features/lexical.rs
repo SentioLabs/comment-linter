@@ -173,8 +173,8 @@ pub fn extract_lexical_features(context: &CommentContext) -> (f32, f32, usize) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
     use crate::types::{CommentKind, LanguageId};
+    use std::path::PathBuf;
 
     fn make_context(comment_text: &str, identifiers: Vec<String>) -> CommentContext {
         CommentContext {
@@ -340,8 +340,16 @@ mod tests {
 
     #[test]
     fn jaccard_partial_overlap() {
-        let a = vec!["increment".to_string(), "counter".to_string(), "value".to_string()];
-        let b = vec!["counter".to_string(), "value".to_string(), "total".to_string()];
+        let a = vec![
+            "increment".to_string(),
+            "counter".to_string(),
+            "value".to_string(),
+        ];
+        let b = vec![
+            "counter".to_string(),
+            "value".to_string(),
+            "total".to_string(),
+        ];
         // intersection = {counter, value} = 2
         // union = {increment, counter, value, total} = 4
         // similarity = 2/4 = 0.5
@@ -423,10 +431,7 @@ mod tests {
 
     #[test]
     fn extract_lexical_features_computes_jaccard() {
-        let ctx = make_context(
-            "// increment counter",
-            vec!["incrementCounter".to_string()],
-        );
+        let ctx = make_context("// increment counter", vec!["incrementCounter".to_string()]);
         let (jaccard, _, _) = extract_lexical_features(&ctx);
         // comment tokens: ["increment", "counter"]
         // identifier tokens: ["increment", "counter"]
@@ -436,10 +441,7 @@ mod tests {
 
     #[test]
     fn extract_lexical_features_computes_substr_ratio() {
-        let ctx = make_context(
-            "// increment counter",
-            vec!["incrementCounter".to_string()],
-        );
+        let ctx = make_context("// increment counter", vec!["incrementCounter".to_string()]);
         let (_, substr_ratio, _) = extract_lexical_features(&ctx);
         // Both "increment" and "counter" are substrings of "incrementCounter" (case-insensitive)
         assert!((substr_ratio - 1.0).abs() < f32::EPSILON);

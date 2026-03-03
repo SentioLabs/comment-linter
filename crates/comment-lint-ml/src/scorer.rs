@@ -75,7 +75,11 @@ mod tests {
     use std::path::PathBuf;
 
     fn dummy_model_path() -> String {
-        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/dummy_model.onnx").to_string()
+        concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/dummy_model.onnx"
+        )
+        .to_string()
     }
 
     fn make_context() -> CommentContext {

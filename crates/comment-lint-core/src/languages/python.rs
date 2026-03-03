@@ -186,16 +186,14 @@ impl PythonLanguage {
         }
 
         // Inside a block (function/class body): parent is "block"
-        if parent_kind == "block" {
-            if Self::is_first_non_comment_child(parent, node) {
-                // Verify the block's parent is a function_definition, class_definition,
-                // or decorated_definition.
-                if let Some(grandparent) = parent.parent() {
-                    let gp_kind = grandparent.kind();
-                    return gp_kind == "function_definition"
-                        || gp_kind == "class_definition"
-                        || gp_kind == "decorated_definition";
-                }
+        if parent_kind == "block" && Self::is_first_non_comment_child(parent, node) {
+            // Verify the block's parent is a function_definition, class_definition,
+            // or decorated_definition.
+            if let Some(grandparent) = parent.parent() {
+                let gp_kind = grandparent.kind();
+                return gp_kind == "function_definition"
+                    || gp_kind == "class_definition"
+                    || gp_kind == "decorated_definition";
             }
         }
 
@@ -279,9 +277,7 @@ impl PythonLanguage {
         let mut current = node.parent();
         while let Some(parent) = current {
             let parent_kind = parent.kind();
-            if DECLARATION_NODES.contains(&parent_kind)
-                || parent_kind == "module"
-            {
+            if DECLARATION_NODES.contains(&parent_kind) || parent_kind == "module" {
                 Self::collect_identifiers_from_node(parent, source_bytes, &mut identifiers);
                 Self::collect_keywords_from_node(parent, source_bytes, &mut keywords);
                 break;
