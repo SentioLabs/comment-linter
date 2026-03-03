@@ -7,8 +7,12 @@ edition = "2021"
 name = "comment-lint"
 path = "src/main.rs"
 
+[features]
+ml = ["dep:comment-lint-ml"]
+
 [dependencies]
 comment-lint-core = { path = "../comment-lint-core" }
+comment-lint-ml = { path = "../comment-lint-ml", optional = true }
 clap = { workspace = true }
 anyhow = { workspace = true }
 colored = { workspace = true }

@@ -10,6 +10,7 @@ use comment_lint_core::output::text::TextFormatter;
 use comment_lint_core::output::OutputFormatter;
 use comment_lint_core::pipeline::Pipeline;
 use comment_lint_core::scoring::heuristic::HeuristicScorer;
+use comment_lint_core::scoring::Scorer;
 
 #[derive(Parser, Debug)]
 #[command(name = "comment-lint", version, about = "Detect superfluous code comments")]
@@ -41,6 +42,14 @@ struct Cli {
     /// Export all comment features as JSONL (for ML training data)
     #[arg(long)]
     export_features: bool,
+
+    /// Scoring backend: "heuristic" (default) or "ml"
+    #[arg(long, default_value = "heuristic")]
+    scorer: String,
+
+    /// Path to ONNX model file (required when --scorer ml, overrides config)
+    #[arg(long)]
+    model_path: Option<PathBuf>,
 }
 
 fn main() -> ExitCode {
@@ -81,11 +90,28 @@ fn main() -> ExitCode {
         }
     };
 
-    // 4. Create scorer (takes weights AND negative weights)
-    let scorer = HeuristicScorer::new(config.weights.clone(), config.negative.clone());
+    // 4. Create scorer based on --scorer flag
+    let scorer: Box<dyn Scorer + Send + Sync> = match cli.scorer.as_str() {
+        "heuristic" => {
+            Box::new(HeuristicScorer::new(config.weights.clone(), config.negative.clone()))
+        }
+        "ml" => {
+            match create_ml_scorer(&cli, &config) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return ExitCode::from(2);
+                }
+            }
+        }
+        other => {
+            eprintln!("error: unknown scorer '{other}', expected 'heuristic' or 'ml'");
+            return ExitCode::from(2);
+        }
+    };
 
     // 5. Create pipeline and run
-    let pipeline = Pipeline::new(config, Box::new(scorer));
+    let pipeline = Pipeline::new(config, scorer);
     let result = pipeline.run(&cli.paths);
 
     // 6. Output results (renumbered after formatter selection moved earlier)
@@ -116,4 +142,36 @@ fn main() -> ExitCode {
     } else {
         ExitCode::from(1)
     }
+}
+
+/// Create an ML scorer when the `ml` feature is enabled.
+#[cfg(feature = "ml")]
+fn create_ml_scorer(
+    cli: &Cli,
+    config: &Config,
+) -> Result<Box<dyn Scorer + Send + Sync>, String> {
+    use comment_lint_ml::scorer::MLScorer;
+
+    // CLI --model-path takes priority, then config [ml].model_path
+    let model_path = cli
+        .model_path
+        .as_ref()
+        .map(|p| p.to_string_lossy().into_owned())
+        .or_else(|| config.ml.model_path.clone())
+        .ok_or_else(|| {
+            "ml scorer requires a model path via --model-path or [ml].model_path in config"
+                .to_string()
+        })?;
+
+    let scorer = MLScorer::new(&model_path).map_err(|e| format!("failed to load ML model: {e}"))?;
+    Ok(Box::new(scorer))
+}
+
+/// Stub when the `ml` feature is not enabled.
+#[cfg(not(feature = "ml"))]
+fn create_ml_scorer(
+    _cli: &Cli,
+    _config: &Config,
+) -> Result<Box<dyn Scorer + Send + Sync>, String> {
+    Err("ml scorer is not available; rebuild with --features ml".to_string())
 }

@@ -15,6 +15,7 @@ pub struct Config {
     pub negative: NegativeWeights,
     pub ignore: IgnoreConfig,
     pub cache: CacheConfig,
+    pub ml: MlConfig,
 }
 
 /// General settings.
@@ -64,6 +65,13 @@ pub struct CacheConfig {
     pub directory: String,
 }
 
+/// ML scorer configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct MlConfig {
+    pub model_path: Option<String>,
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -72,6 +80,7 @@ impl Default for Config {
             negative: NegativeWeights::default(),
             ignore: IgnoreConfig::default(),
             cache: CacheConfig::default(),
+            ml: MlConfig::default(),
         }
     }
 }
@@ -140,6 +149,12 @@ impl Default for CacheConfig {
             enabled: true,
             directory: ".comment-lint-cache".to_string(),
         }
+    }
+}
+
+impl Default for MlConfig {
+    fn default() -> Self {
+        Self { model_path: None }
     }
 }
 
@@ -432,6 +447,42 @@ threshold = 0.9
         assert!(
             (cfg.general.threshold - 0.95).abs() < f64::EPSILON,
             "Explicit path should override project config"
+        );
+    }
+
+    #[test]
+    fn test_default_ml_config() {
+        let cfg = Config::default();
+        assert!(
+            cfg.ml.model_path.is_none(),
+            "Default ml.model_path should be None"
+        );
+    }
+
+    #[test]
+    fn test_ml_config_from_toml() {
+        let toml_str = r#"
+[ml]
+model_path = "/path/to/model.onnx"
+"#;
+        let cfg = Config::from_toml_str(toml_str).expect("valid TOML");
+        assert_eq!(
+            cfg.ml.model_path,
+            Some("/path/to/model.onnx".to_string()),
+            "ml.model_path should be parsed from TOML"
+        );
+    }
+
+    #[test]
+    fn test_ml_config_absent_gives_default() {
+        let toml_str = r#"
+[general]
+threshold = 0.5
+"#;
+        let cfg = Config::from_toml_str(toml_str).expect("valid TOML");
+        assert!(
+            cfg.ml.model_path.is_none(),
+            "ml.model_path should be None when [ml] section is absent"
         );
     }
 }
