@@ -82,7 +82,10 @@ def main() -> None:
         description="Split dataset into train/val/test sets with stratified splitting"
     )
     parser.add_argument(
-        "--input", required=True, help="Input JSONL file with labeled data"
+        "--input",
+        required=True,
+        nargs="+",
+        help="Input JSONL file(s) with labeled data (merged at runtime)",
     )
     parser.add_argument(
         "--output-dir",
@@ -102,15 +105,17 @@ def main() -> None:
 
     records = []
     skipped = 0
-    with open(args.input) as f:
-        for line in f:
-            if not line.strip():
-                continue
-            record = json.loads(line)
-            if record.get("label") == -1:
-                skipped += 1
-                continue
-            records.append(record)
+    for input_path in args.input:
+        with open(input_path) as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                record = json.loads(line)
+                if record.get("label") == -1:
+                    skipped += 1
+                    continue
+                records.append(record)
+        print(f"Loaded from {input_path}: {len(records)} so far")
 
     if not records:
         print("No labeled examples found (all uncertain?).")

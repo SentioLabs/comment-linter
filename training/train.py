@@ -133,10 +133,12 @@ def train_models(
     """
     models = {
         "LogisticRegression": LogisticRegression(
-            max_iter=1000, random_state=42, solver="lbfgs"
+            max_iter=1000, random_state=42, solver="lbfgs",
+            class_weight="balanced",
         ),
         "RandomForest": RandomForestClassifier(
-            n_estimators=100, random_state=42, n_jobs=-1
+            n_estimators=100, random_state=42, n_jobs=-1,
+            class_weight="balanced",
         ),
         "XGBClassifier": XGBClassifier(
             n_estimators=100,
@@ -144,6 +146,7 @@ def train_models(
             learning_rate=0.1,
             random_state=42,
             eval_metric="logloss",
+            scale_pos_weight=float((y == 0).sum()) / max(float((y == 1).sum()), 1),
         ),
     }
 
@@ -220,12 +223,14 @@ def main() -> None:
     parser.add_argument(
         "--train",
         required=True,
-        help="Path to training JSONL file",
+        nargs="+",
+        help="Path(s) to training JSONL files (merged at runtime)",
     )
     parser.add_argument(
         "--val",
         default=None,
-        help="Path to validation JSONL file (optional)",
+        nargs="+",
+        help="Path(s) to validation JSONL files (optional)",
     )
     parser.add_argument(
         "--output",
@@ -234,10 +239,13 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Load training data
-    print(f"Loading training data from {args.train}...", file=sys.stderr)
-    train_records = load_jsonl(args.train)
-    print(f"  Loaded {len(train_records)} records", file=sys.stderr)
+    # Load training data (merge multiple sources)
+    train_records = []
+    for path in args.train:
+        records = load_jsonl(path)
+        print(f"Loaded {len(records)} records from {path}", file=sys.stderr)
+        train_records.extend(records)
+    print(f"Total training records: {len(train_records)}", file=sys.stderr)
 
     X_train, y_train = extract_features(train_records)
     print(
@@ -265,8 +273,11 @@ def main() -> None:
 
     # Evaluate on validation set if provided
     if args.val:
-        print(f"\nEvaluating on validation set: {args.val}...", file=sys.stderr)
-        val_records = load_jsonl(args.val)
+        val_records = []
+        for path in args.val:
+            records = load_jsonl(path)
+            print(f"Loaded {len(records)} val records from {path}", file=sys.stderr)
+            val_records.extend(records)
         X_val, y_val = extract_features(val_records)
         from sklearn.metrics import classification_report
 
