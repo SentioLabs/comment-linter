@@ -31,6 +31,9 @@ impl HeuristicScorer {
         if features.imperative_verb_noun {
             score += self.weights.imperative_verb_noun;
         }
+        if features.verb_noun_matches_identifier {
+            score += self.weights.verb_noun_matches_identifier;
+        }
         if features.is_section_label {
             score += self.weights.is_section_label;
         }
@@ -75,6 +78,9 @@ impl HeuristicScorer {
         if features.imperative_verb_noun {
             superfluous_signals += 1;
         }
+        if features.verb_noun_matches_identifier {
+            superfluous_signals += 1;
+        }
         if features.is_section_label {
             superfluous_signals += 1;
         }
@@ -112,6 +118,9 @@ impl HeuristicScorer {
         }
         if features.imperative_verb_noun {
             reasons.push("imperative_verb_noun_pattern".to_string());
+        }
+        if features.verb_noun_matches_identifier {
+            reasons.push("verb_noun_matches_identifier".to_string());
         }
         if features.is_section_label {
             reasons.push("section_label".to_string());
@@ -183,6 +192,7 @@ mod tests {
             has_why_indicator: false,
             has_external_ref: false,
             imperative_verb_noun: false,
+            verb_noun_matches_identifier: false,
             is_section_label: false,
             contains_literal_values: false,
             references_other_files: false,
@@ -253,7 +263,7 @@ mod tests {
         features.has_why_indicator = true;
 
         let result = scorer.score(&context, &features);
-        // Expected: 0.9*0.25 + 0.8*0.20 + 0.15 + 0.10 + 0.05 - 0.30 = 0.385
+        // Expected: 0.9*0.25 + 0.8*0.30 + 0.20 + 0.10 + 0.05 - 0.30 = 0.515
         assert!(
             result.score >= 0.3 && result.score <= 0.7,
             "Mixed features should yield score in [0.3, 0.7], got {}",
@@ -268,6 +278,7 @@ mod tests {
             token_overlap_jaccard: 5.0,
             identifier_substring_ratio: 5.0,
             imperative_verb_noun: 5.0,
+            verb_noun_matches_identifier: 5.0,
             is_section_label: 5.0,
             contains_literal_values: 5.0,
             references_other_files: 5.0,

@@ -4,6 +4,7 @@ use crate::features::ScoredComment;
 use crate::output::OutputFormatter;
 use serde_json::json;
 use std::io::Write;
+use std::time::Duration;
 
 /// Formatter that emits one JSON object per line with full feature vectors for ML training data.
 pub struct FeaturesJsonlFormatter;
@@ -39,6 +40,8 @@ impl OutputFormatter for FeaturesJsonlFormatter {
         _total_comments: usize,
         _superfluous_count: usize,
         _file_count: usize,
+        _elapsed: Duration,
+        _cpu_time: Option<Duration>,
         _writer: &mut dyn Write,
     ) -> std::io::Result<()> {
         Ok(())
@@ -47,6 +50,7 @@ impl OutputFormatter for FeaturesJsonlFormatter {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
     use crate::output::tests::make_scored_comment;
     use crate::output::OutputFormatter;
 
@@ -211,7 +215,7 @@ mod tests {
     fn features_jsonl_summary_is_noop() {
         let formatter = super::FeaturesJsonlFormatter;
         let mut buf = Vec::new();
-        formatter.format_summary(100, 25, 10, &mut buf).unwrap();
+        formatter.format_summary(100, 25, 10, Duration::from_millis(1234), None, &mut buf).unwrap();
         let output = String::from_utf8(buf).unwrap();
 
         assert!(output.is_empty(), "summary should be a no-op, got: {}", output);

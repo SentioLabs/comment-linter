@@ -1,1 +1,9 @@
 /target
+
+# Training artifacts (generated data, models, caches)
+training/data/
+**/__pycache__/
+*.egg-info/
+
+# Claude Code session files
+.claude/

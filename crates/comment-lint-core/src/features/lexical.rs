@@ -87,7 +87,7 @@ pub fn tokenize_identifiers(identifiers: &[String]) -> Vec<String> {
 
 /// Split a string on camelCase boundaries.
 /// For example, "getUserName" -> ["get", "User", "Name"]
-fn split_camel_case(s: &str) -> Vec<String> {
+pub(crate) fn split_camel_case(s: &str) -> Vec<String> {
     let mut parts = Vec::new();
     let mut current = String::new();
 

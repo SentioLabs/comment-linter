@@ -84,7 +84,7 @@ def create_dummy_model() -> onnx.ModelProto:
     return model
 
 
-if __name__ == "__main__":
+def main():
     import argparse
     import pathlib
 
@@ -103,3 +103,7 @@ if __name__ == "__main__":
     print(f"Saved dummy model to {args.output}")
     print(f"  Input: 'input' shape=[batch, {FEATURE_DIM}] float32")
     print(f"  Output: 'probabilities' shape=[batch, {OUTPUT_DIM}] float32")
+
+
+if __name__ == "__main__":
+    main()

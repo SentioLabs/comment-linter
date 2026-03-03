@@ -3,6 +3,7 @@
 
 use std::path::{Path, PathBuf};
 
+use ignore::WalkBuilder;
 use rayon::prelude::*;
 use regex::Regex;
 use walkdir::WalkDir;
@@ -22,6 +23,8 @@ use crate::types::CommentKind;
 pub struct PipelineResult {
     /// All comments that passed threshold and confidence filters.
     pub scored_comments: Vec<ScoredComment>,
+    /// Total number of comments analyzed (before threshold/confidence filtering).
+    pub total_comments_scanned: usize,
     /// Number of files successfully processed.
     pub files_processed: usize,
     /// Number of files skipped (unsupported extension, read error, etc.).
@@ -69,12 +72,16 @@ impl Pipeline {
     pub fn run(&self, paths: &[PathBuf]) -> PipelineResult {
         let files = self.discover_files(paths);
 
+        let threshold = self.config.general.threshold as f32;
+        let min_confidence = self.config.general.min_confidence as f32;
+
         let results: Vec<Option<Vec<ScoredComment>>> = files
             .par_iter()
             .map(|path| self.process_file(path))
             .collect();
 
         let mut scored_comments = Vec::new();
+        let mut total_comments_scanned = 0usize;
         let mut files_processed = 0usize;
         let mut files_skipped = 0usize;
 
@@ -82,7 +89,12 @@ impl Pipeline {
             match result {
                 Some(comments) => {
                     files_processed += 1;
-                    scored_comments.extend(comments);
+                    total_comments_scanned += comments.len();
+                    scored_comments.extend(
+                        comments
+                            .into_iter()
+                            .filter(|sc| sc.score >= threshold && sc.confidence >= min_confidence),
+                    );
                 }
                 None => {
                     files_skipped += 1;
@@ -92,22 +104,36 @@ impl Pipeline {
 
         PipelineResult {
             scored_comments,
+            total_comments_scanned,
             files_processed,
             files_skipped,
         }
     }
 
     /// Discover all files from the given paths, walking directories recursively.
+    ///
+    /// When `config.ignore.respect_gitignore` is true, uses [`ignore::WalkBuilder`]
+    /// which automatically honours `.gitignore`, `.git/info/exclude`, and global
+    /// gitignore rules. Otherwise falls back to plain `WalkDir`.
     fn discover_files(&self, paths: &[PathBuf]) -> Vec<PathBuf> {
         let mut files = Vec::new();
+        let use_gitignore = self.config.ignore.respect_gitignore;
 
         for path in paths {
             if path.is_file() {
                 files.push(path.clone());
             } else if path.is_dir() {
-                for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
-                    if entry.file_type().is_file() {
-                        files.push(entry.into_path());
+                if use_gitignore {
+                    for entry in WalkBuilder::new(path).build().filter_map(|e| e.ok()) {
+                        if entry.file_type().map_or(false, |ft| ft.is_file()) {
+                            files.push(entry.into_path());
+                        }
+                    }
+                } else {
+                    for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
+                        if entry.file_type().is_file() {
+                            files.push(entry.into_path());
+                        }
                     }
                 }
             }
@@ -143,9 +169,7 @@ impl Pipeline {
         // Extract comments
         let comments = lang.extract_comments(&tree, source, path);
 
-        // Process each comment: extract features, score, filter
-        let threshold = self.config.general.threshold as f32;
-        let min_confidence = self.config.general.min_confidence as f32;
+        // Process each comment: extract features, score
         let include_doc = self.config.general.include_doc_comments;
 
         let scored: Vec<ScoredComment> = comments
@@ -165,7 +189,6 @@ impl Pipeline {
                 let features = self.extract_features(&ctx);
                 self.scorer.score(&ctx, &features)
             })
-            .filter(|sc| sc.score >= threshold && sc.confidence >= min_confidence)
             .collect();
 
         Some(scored)
@@ -192,6 +215,7 @@ impl Pipeline {
             has_why_indicator: semantic.has_why_indicator,
             has_external_ref: semantic.has_external_ref,
             imperative_verb_noun: semantic.imperative_verb_noun,
+            verb_noun_matches_identifier: semantic.verb_noun_matches_identifier,
             is_section_label: semantic.is_section_label,
             contains_literal_values: cross_ref.contains_literal_values,
             references_other_files: cross_ref.references_other_files,
@@ -553,5 +577,74 @@ func decrementCounter() {}
             .any(|sc| sc.context.file_path.to_string_lossy().contains("nested.go"));
         assert!(has_root, "Should find comments from root.go");
         assert!(has_nested, "Should find comments from nested.go");
+    }
+
+    // ---- Tests: .gitignore-aware file discovery ----
+
+    /// Helper: initialise a bare git repo so that `ignore::WalkBuilder` recognises
+    /// the directory as a git working tree and reads `.gitignore`.
+    fn git_init(dir: &TempDir) {
+        std::process::Command::new("git")
+            .args(["init", "--quiet"])
+            .current_dir(dir.path())
+            .status()
+            .expect("git init");
+    }
+
+    #[test]
+    fn discover_files_respects_gitignore() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        git_init(&dir);
+
+        // .gitignore excludes the "generated/" directory
+        write_file(&dir, ".gitignore", "generated/\n");
+
+        let go_src = "package main\n\n// a comment\nfunc f() {}\n";
+        write_file(&dir, "included.go", go_src);
+        write_file(&dir, "generated/excluded.go", go_src);
+
+        let mut config = Config::default();
+        config.general.threshold = 0.0;
+        config.general.min_confidence = 0.0;
+        config.ignore.paths = vec![];
+        config.ignore.comment_patterns = vec![];
+        config.ignore.respect_gitignore = true;
+
+        let pipeline = make_pipeline(config);
+        let files = pipeline.discover_files(&[dir.path().to_path_buf()]);
+
+        let has_included = files.iter().any(|p| p.to_string_lossy().contains("included.go"));
+        let has_excluded = files.iter().any(|p| p.to_string_lossy().contains("excluded.go"));
+
+        assert!(has_included, "included.go should be discovered");
+        assert!(!has_excluded, "generated/excluded.go should be skipped by .gitignore");
+    }
+
+    #[test]
+    fn discover_files_ignores_gitignore_when_disabled() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        git_init(&dir);
+
+        write_file(&dir, ".gitignore", "generated/\n");
+
+        let go_src = "package main\n\n// a comment\nfunc f() {}\n";
+        write_file(&dir, "included.go", go_src);
+        write_file(&dir, "generated/excluded.go", go_src);
+
+        let mut config = Config::default();
+        config.general.threshold = 0.0;
+        config.general.min_confidence = 0.0;
+        config.ignore.paths = vec![];
+        config.ignore.comment_patterns = vec![];
+        config.ignore.respect_gitignore = false;
+
+        let pipeline = make_pipeline(config);
+        let files = pipeline.discover_files(&[dir.path().to_path_buf()]);
+
+        let has_included = files.iter().any(|p| p.to_string_lossy().contains("included.go"));
+        let has_excluded = files.iter().any(|p| p.to_string_lossy().contains("excluded.go"));
+
+        assert!(has_included, "included.go should be discovered");
+        assert!(has_excluded, "generated/excluded.go should also be discovered when gitignore is disabled");
     }
 }

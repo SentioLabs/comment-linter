@@ -23,14 +23,19 @@ fn test_default_weights() {
         cfg.weights.token_overlap_jaccard
     );
     assert!(
-        (cfg.weights.identifier_substring_ratio - 0.20).abs() < f64::EPSILON,
-        "Expected identifier_substring_ratio 0.20, got {}",
+        (cfg.weights.identifier_substring_ratio - 0.30).abs() < f64::EPSILON,
+        "Expected identifier_substring_ratio 0.30, got {}",
         cfg.weights.identifier_substring_ratio
     );
     assert!(
-        (cfg.weights.imperative_verb_noun - 0.15).abs() < f64::EPSILON,
-        "Expected imperative_verb_noun 0.15, got {}",
+        (cfg.weights.imperative_verb_noun - 0.20).abs() < f64::EPSILON,
+        "Expected imperative_verb_noun 0.20, got {}",
         cfg.weights.imperative_verb_noun
+    );
+    assert!(
+        (cfg.weights.verb_noun_matches_identifier - 0.25).abs() < f64::EPSILON,
+        "Expected verb_noun_matches_identifier 0.25, got {}",
+        cfg.weights.verb_noun_matches_identifier
     );
     assert!(
         (cfg.weights.is_section_label - 0.10).abs() < f64::EPSILON,

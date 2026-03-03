@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::time::{Duration, Instant};
 
 use clap::Parser;
 use comment_lint_core::config::Config;
@@ -50,6 +51,10 @@ struct Cli {
     /// Path to ONNX model file (required when --scorer ml, overrides config)
     #[arg(long)]
     model_path: Option<PathBuf>,
+
+    /// Disable .gitignore filtering (scan all files regardless of .gitignore rules)
+    #[arg(long)]
+    no_gitignore: bool,
 }
 
 fn main() -> ExitCode {
@@ -74,6 +79,9 @@ fn main() -> ExitCode {
     }
     if cli.include_doc_comments {
         config.general.include_doc_comments = true;
+    }
+    if cli.no_gitignore {
+        config.ignore.respect_gitignore = false;
     }
 
     // 3. Select output formatter; --export-features overrides config to capture everything
@@ -120,8 +128,14 @@ fn main() -> ExitCode {
     };
 
     // 5. Create pipeline and run
+    let cpu_before = cpu_time();
+    let wall_start = Instant::now();
+
     let pipeline = Pipeline::new(config, scorer);
     let result = pipeline.run(&cli.paths);
+
+    let elapsed = wall_start.elapsed();
+    let cpu_elapsed = cpu_before.and_then(|before| cpu_time().map(|after| after - before));
 
     // 6. Output results (renumbered after formatter selection moved earlier)
     let mut stdout = std::io::stdout().lock();
@@ -132,13 +146,13 @@ fn main() -> ExitCode {
         }
     }
 
-    // format_summary needs: total_comments, superfluous_count, file_count
-    // PipelineResult only gives us scored_comments and files_processed/files_skipped
     let superfluous_count = result.scored_comments.len();
     if let Err(e) = formatter.format_summary(
-        superfluous_count,
+        result.total_comments_scanned,
         superfluous_count,
         result.files_processed,
+        elapsed,
+        cpu_elapsed,
         &mut stdout,
     ) {
         eprintln!("error writing summary: {e}");
@@ -219,4 +233,21 @@ fn create_ensemble_scorer(
     _config: &Config,
 ) -> Result<Box<dyn Scorer + Send + Sync>, String> {
     Err("ensemble scorer is not available; rebuild with --features ml".to_string())
+}
+
+/// Read total CPU time (user + system) for the current process.
+///
+/// Returns `None` on non-Linux platforms or if `/proc/self/stat` is unreadable.
+fn cpu_time() -> Option<Duration> {
+    let stat = std::fs::read_to_string("/proc/self/stat").ok()?;
+    let fields: Vec<&str> = stat.split_whitespace().collect();
+    // Fields 13 and 14 are utime and stime in clock ticks.
+    if fields.len() < 15 {
+        return None;
+    }
+    let utime: u64 = fields[13].parse().ok()?;
+    let stime: u64 = fields[14].parse().ok()?;
+    let ticks_per_sec = 100u64; // sysconf(_SC_CLK_TCK) is 100 on virtually all Linux
+    let total_ticks = utime + stime;
+    Some(Duration::from_nanos(total_ticks * 1_000_000_000 / ticks_per_sec))
 }

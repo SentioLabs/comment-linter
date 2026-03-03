@@ -28,6 +28,7 @@ clt-split-dataset      = "clt.split_dataset:main"
 clt-train              = "clt.train:main"
 clt-export-onnx        = "clt.export_onnx:main"
 clt-evaluate           = "clt.evaluate_model:main"
+clt-create-dummy-model = "clt.create_dummy_model:main"
 
 [dependency-groups]
 dev = [

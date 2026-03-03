@@ -4,10 +4,21 @@ use crate::features::ScoredComment;
 use crate::output::OutputFormatter;
 use colored::Colorize;
 use std::io::Write;
+use std::time::Duration;
 
 /// Terminal output formatter that displays scored comments with colored text
 /// and Unicode star ratings.
 pub struct TextFormatter;
+
+/// Format a Duration as a human-readable string (e.g. "1.23s", "456ms").
+fn format_duration(d: Duration) -> String {
+    let secs = d.as_secs_f64();
+    if secs >= 1.0 {
+        format!("{secs:.2}s")
+    } else {
+        format!("{:.0}ms", secs * 1000.0)
+    }
+}
 
 /// Compute a star rating (1..=5) from a superfluousness score.
 ///
@@ -70,21 +81,39 @@ impl OutputFormatter for TextFormatter {
         total_comments: usize,
         superfluous_count: usize,
         file_count: usize,
+        elapsed: Duration,
+        cpu_time: Option<Duration>,
         writer: &mut dyn Write,
     ) -> std::io::Result<()> {
+        let elapsed_str = format_duration(elapsed);
+        let timing = match cpu_time {
+            Some(cpu) => {
+                let cpu_str = format_duration(cpu);
+                let parallelism = if !elapsed.is_zero() {
+                    cpu.as_secs_f64() / elapsed.as_secs_f64()
+                } else {
+                    0.0
+                };
+                format!("{elapsed_str} wall, {cpu_str} cpu ({parallelism:.1}x)")
+            }
+            None => elapsed_str,
+        };
+
         writeln!(
             writer,
-            "\n{} {} comments scanned, {} superfluous, {} files",
+            "\n{} {} comments scanned, {} superfluous, {} files in {}",
             "Summary:".bold(),
             total_comments,
             superfluous_count.to_string().red(),
             file_count,
+            timing.dimmed(),
         )
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
     use crate::output::tests::make_scored_comment;
     use crate::output::OutputFormatter;
 
@@ -164,7 +193,7 @@ mod tests {
     fn text_formatter_formats_summary() {
         let formatter = super::TextFormatter;
         let mut buf = Vec::new();
-        formatter.format_summary(100, 25, 10, &mut buf).unwrap();
+        formatter.format_summary(100, 25, 10, Duration::from_millis(1234), None, &mut buf).unwrap();
         let output = String::from_utf8(buf).unwrap();
 
         assert!(output.contains("100"), "summary should show total comments");

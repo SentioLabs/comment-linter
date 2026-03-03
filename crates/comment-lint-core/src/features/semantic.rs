@@ -2,7 +2,10 @@
 //! imperative-verb-noun patterns, and section labels.
 
 use regex::Regex;
+use std::collections::HashSet;
 use std::sync::LazyLock;
+
+use super::lexical::{split_camel_case, STOP_WORDS};
 
 // ── Compiled regexes ────────────────────────────────────────────────
 
@@ -23,6 +26,10 @@ const IMPERATIVE_VERBS: &[&str] = &[
     "calculate", "convert", "handle", "process", "return", "send", "load",
     "save", "store", "open", "close", "start", "stop", "run", "execute",
     "read", "write", "find", "search", "sort", "filter", "map", "reduce",
+    "use", "call", "wait", "define", "configure", "apply", "ensure", "verify",
+    "print", "log", "append", "insert", "merge", "copy", "format", "generate",
+    "render", "connect", "disconnect", "register", "subscribe", "publish",
+    "listen", "emit", "dispatch", "setup", "wrap", "mount",
 ];
 
 /// Characters used as visual dividers in section labels.
@@ -42,8 +49,9 @@ pub fn has_external_ref(text: &str) -> bool {
 }
 
 /// Returns `true` when the comment starts with an imperative verb AND
-/// more than 50% of the remaining (non-verb) words overlap with
-/// `nearby_identifiers`.
+/// at least 33% of the remaining nouns (after filtering stop words and
+/// single-char tokens) match nearby identifiers via case-insensitive
+/// substring matching.
 pub fn imperative_verb_noun(text: &str, nearby_identifiers: &[String]) -> bool {
     let words: Vec<&str> = text.split_whitespace().collect();
     if words.is_empty() {
@@ -55,9 +63,13 @@ pub fn imperative_verb_noun(text: &str, nearby_identifiers: &[String]) -> bool {
         return false;
     }
 
+    let stop_words: HashSet<&str> = STOP_WORDS.iter().copied().collect();
+
     let nouns: Vec<String> = words[1..]
         .iter()
         .map(|w| w.to_lowercase())
+        .filter(|w| w.len() > 1)
+        .filter(|w| !stop_words.contains(w.as_str()))
         .collect();
 
     if nouns.is_empty() {
@@ -71,11 +83,75 @@ pub fn imperative_verb_noun(text: &str, nearby_identifiers: &[String]) -> bool {
 
     let matching = nouns
         .iter()
-        .filter(|noun| lowered_identifiers.contains(noun))
+        .filter(|noun| {
+            lowered_identifiers
+                .iter()
+                .any(|ident| ident.contains(noun.as_str()))
+        })
         .count();
 
-    // Strictly more than 50%.
-    matching * 2 > nouns.len()
+    // At least 33% of nouns match (stop word removal already filters filler).
+    matching * 3 >= nouns.len()
+}
+
+/// Returns `true` when the comment's verb+noun pattern matches a nearby
+/// identifier's structure. For example, "delete user from database" matches
+/// `DeleteUserByAuth0ID` because verb "delete" matches the first part and
+/// noun "user" matches another part.
+pub fn verb_noun_matches_identifier(text: &str, nearby_identifiers: &[String]) -> bool {
+    let words: Vec<&str> = text.split_whitespace().collect();
+    if words.is_empty() {
+        return false;
+    }
+
+    let verb = words[0].to_lowercase();
+    if !IMPERATIVE_VERBS.contains(&verb.as_str()) {
+        return false;
+    }
+
+    let stop_words: HashSet<&str> = STOP_WORDS.iter().copied().collect();
+
+    let nouns: Vec<String> = words[1..]
+        .iter()
+        .map(|w| w.to_lowercase())
+        .filter(|w| w.len() > 1)
+        .filter(|w| !stop_words.contains(w.as_str()))
+        .collect();
+
+    if nouns.is_empty() {
+        return false;
+    }
+
+    for ident in nearby_identifiers {
+        // Split identifier by snake_case and camelCase into lowercased parts
+        let parts: Vec<String> = ident
+            .split('_')
+            .flat_map(|segment| split_camel_case(segment))
+            .map(|p| p.to_lowercase())
+            .filter(|p| p.len() > 1)
+            .collect();
+
+        if parts.is_empty() {
+            continue;
+        }
+
+        // Verb must match the first part of the identifier
+        if parts[0] != verb {
+            continue;
+        }
+
+        // At least one noun must match any other part
+        let other_parts = &parts[1..];
+        let noun_matches = nouns
+            .iter()
+            .any(|noun| other_parts.iter().any(|part| part == noun));
+
+        if noun_matches {
+            return true;
+        }
+    }
+
+    false
 }
 
 /// Returns `true` if `text` looks like a section label: at most 4 words after
@@ -104,6 +180,7 @@ pub struct SemanticFeatures {
     pub has_why_indicator: bool,
     pub has_external_ref: bool,
     pub imperative_verb_noun: bool,
+    pub verb_noun_matches_identifier: bool,
     pub is_section_label: bool,
 }
 
@@ -116,6 +193,7 @@ pub fn extract_semantic_features(
         has_why_indicator: has_why_indicator(text),
         has_external_ref: has_external_ref(text),
         imperative_verb_noun: imperative_verb_noun(text, nearby_identifiers),
+        verb_noun_matches_identifier: verb_noun_matches_identifier(text, nearby_identifiers),
         is_section_label: is_section_label(text),
     }
 }
@@ -204,18 +282,112 @@ mod tests {
     }
 
     #[test]
-    fn imperative_verb_noun_partial_overlap() {
-        // "validate input data" -> nouns: ["input", "data"]
-        // identifiers has only "input" -> 1/2 = 50% -> true (>50% means strictly more than half)
-        // 50% is not >50%, so this should be false
+    fn imperative_verb_noun_partial_overlap_passes_with_lower_threshold() {
+        // "validate input data" -> nouns (after stop word filter): ["input", "data"]
+        // identifiers has "input" -> 1/2 = 50% >= 33% -> true
         let identifiers = vec!["input".to_string()];
-        assert!(!imperative_verb_noun("validate input data", &identifiers));
+        assert!(imperative_verb_noun("validate input data", &identifiers));
+    }
+
+    #[test]
+    fn imperative_verb_noun_below_threshold() {
+        // "validate input data records" -> nouns: ["input", "data", "records"]
+        // identifiers has none -> 0/3 = 0% -> false
+        let identifiers = vec!["something".to_string()];
+        assert!(!imperative_verb_noun("validate input data records", &identifiers));
     }
 
     #[test]
     fn imperative_verb_noun_full_overlap() {
         let identifiers = vec!["input".to_string(), "data".to_string()];
         assert!(imperative_verb_noun("validate input data", &identifiers));
+    }
+
+    #[test]
+    fn imperative_verb_noun_filters_stop_words() {
+        // "get the user object from the database" -> nouns after stop words: ["user", "object", "database"]
+        // "user" is a substring of "GetUserByAuth0ID" (lowercased)
+        let identifiers = vec!["GetUserByAuth0ID".to_string()];
+        assert!(imperative_verb_noun(
+            "get the user object from the database",
+            &identifiers
+        ));
+    }
+
+    #[test]
+    fn imperative_verb_noun_substring_matching() {
+        // "delete user" -> noun "user" is substring of "deleteUserByAuth0ID"
+        let identifiers = vec!["deleteUserByAuth0ID".to_string()];
+        assert!(imperative_verb_noun("delete user", &identifiers));
+    }
+
+    #[test]
+    fn imperative_verb_noun_filters_single_char_nouns() {
+        // "get x" -> "x" is filtered (single-char) -> no nouns -> false
+        let identifiers = vec!["x".to_string()];
+        assert!(!imperative_verb_noun("get x", &identifiers));
+    }
+
+    #[test]
+    fn imperative_verb_noun_expanded_verbs() {
+        // Test some of the newly added verbs
+        let identifiers = vec!["config".to_string()];
+        assert!(imperative_verb_noun("configure config", &identifiers));
+        assert!(imperative_verb_noun("register config", &identifiers));
+        assert!(imperative_verb_noun("emit config", &identifiers));
+    }
+
+    // ── verb_noun_matches_identifier ────────────────────────────────
+
+    #[test]
+    fn verb_noun_matches_identifier_basic() {
+        // "delete user" → verb "delete", noun "user"
+        // "DeleteUserByAuth0ID" → parts: ["delete", "user", "by", "auth0", "id"]
+        // verb matches first part, "user" matches second → true
+        let identifiers = vec!["DeleteUserByAuth0ID".to_string()];
+        assert!(verb_noun_matches_identifier("delete user from database", &identifiers));
+    }
+
+    #[test]
+    fn verb_noun_matches_identifier_snake_case() {
+        let identifiers = vec!["get_user_name".to_string()];
+        assert!(verb_noun_matches_identifier("get user name", &identifiers));
+    }
+
+    #[test]
+    fn verb_noun_matches_identifier_verb_mismatch() {
+        // Verb "fetch" doesn't match first part "delete"
+        let identifiers = vec!["DeleteUser".to_string()];
+        assert!(!verb_noun_matches_identifier("fetch user", &identifiers));
+    }
+
+    #[test]
+    fn verb_noun_matches_identifier_no_noun_match() {
+        // Verb "delete" matches, but noun "record" doesn't match any other part
+        let identifiers = vec!["DeleteUser".to_string()];
+        assert!(!verb_noun_matches_identifier("delete record", &identifiers));
+    }
+
+    #[test]
+    fn verb_noun_matches_identifier_non_imperative() {
+        let identifiers = vec!["TheUser".to_string()];
+        assert!(!verb_noun_matches_identifier("The user is logged in", &identifiers));
+    }
+
+    #[test]
+    fn verb_noun_matches_identifier_empty() {
+        let identifiers: Vec<String> = vec![];
+        assert!(!verb_noun_matches_identifier("delete user", &identifiers));
+        assert!(!verb_noun_matches_identifier("", &identifiers));
+    }
+
+    #[test]
+    fn verb_noun_matches_identifier_filters_stop_words() {
+        // "get the user from the database" → after filtering: verb "get", nouns ["user", "database"]
+        // "getUserFromDB" → parts: ["get", "user", "from", "db"]
+        // verb matches first part, "user" matches second → true
+        let identifiers = vec!["getUserFromDB".to_string()];
+        assert!(verb_noun_matches_identifier("get the user from the database", &identifiers));
     }
 
     // ── is_section_label ────────────────────────────────────────────

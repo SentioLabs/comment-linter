@@ -38,6 +38,8 @@ pub struct FeatureVector {
     pub has_external_ref: bool,
     /// Whether the comment uses an imperative verb followed by a noun.
     pub imperative_verb_noun: bool,
+    /// Whether the comment's verb+noun pattern matches a nearby identifier.
+    pub verb_noun_matches_identifier: bool,
     /// Whether the comment is a section label (e.g. "// --- Helpers ---").
     pub is_section_label: bool,
     /// Whether the comment contains literal values (numbers, strings, etc.).

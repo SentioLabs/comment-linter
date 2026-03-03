@@ -74,6 +74,7 @@ mod tests {
             has_why_indicator: false,
             has_external_ref: false,
             imperative_verb_noun: false,
+            verb_noun_matches_identifier: false,
             is_section_label: false,
             contains_literal_values: false,
             references_other_files: false,

@@ -12,6 +12,7 @@ pub mod text;
 
 use crate::features::ScoredComment;
 use std::io::Write;
+use std::time::Duration;
 
 /// Trait implemented by all output formatters.
 pub trait OutputFormatter: Send + Sync {
@@ -28,6 +29,8 @@ pub trait OutputFormatter: Send + Sync {
         total_comments: usize,
         superfluous_count: usize,
         file_count: usize,
+        elapsed: Duration,
+        cpu_time: Option<Duration>,
         writer: &mut dyn Write,
     ) -> std::io::Result<()>;
 }
@@ -75,6 +78,7 @@ mod tests {
                 has_why_indicator: false,
                 has_external_ref: false,
                 imperative_verb_noun: true,
+                verb_noun_matches_identifier: false,
                 is_section_label: false,
                 contains_literal_values: false,
                 references_other_files: false,

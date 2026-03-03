@@ -4,6 +4,7 @@ use crate::features::ScoredComment;
 use crate::output::OutputFormatter;
 use serde_json::json;
 use std::io::Write;
+use std::time::Duration;
 
 /// Formatter that emits one JSON object per line (JSONL) for machine consumption.
 pub struct JsonFormatter;
@@ -34,14 +35,20 @@ impl OutputFormatter for JsonFormatter {
         total_comments: usize,
         superfluous_count: usize,
         file_count: usize,
+        elapsed: Duration,
+        cpu_time: Option<Duration>,
         writer: &mut dyn Write,
     ) -> std::io::Result<()> {
-        let value = json!({
+        let mut value = json!({
             "type": "summary",
             "total_comments": total_comments,
             "superfluous_count": superfluous_count,
             "file_count": file_count,
+            "elapsed_ms": elapsed.as_millis(),
         });
+        if let Some(cpu) = cpu_time {
+            value["cpu_ms"] = serde_json::Value::from(cpu.as_millis() as u64);
+        }
         let line = serde_json::to_string(&value)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         writeln!(writer, "{}", line)
@@ -50,6 +57,7 @@ impl OutputFormatter for JsonFormatter {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
     use crate::output::tests::make_scored_comment;
     use crate::output::OutputFormatter;
 
@@ -124,7 +132,7 @@ mod tests {
     fn json_formatter_summary_has_type_field() {
         let formatter = super::JsonFormatter;
         let mut buf = Vec::new();
-        formatter.format_summary(100, 25, 10, &mut buf).unwrap();
+        formatter.format_summary(100, 25, 10, Duration::from_millis(1234), None, &mut buf).unwrap();
         let output = String::from_utf8(buf).unwrap();
 
         let parsed: serde_json::Value = serde_json::from_str(output.trim()).unwrap();

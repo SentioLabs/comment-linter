@@ -34,6 +34,7 @@ pub struct WeightsConfig {
     pub token_overlap_jaccard: f64,
     pub identifier_substring_ratio: f64,
     pub imperative_verb_noun: f64,
+    pub verb_noun_matches_identifier: f64,
     pub is_section_label: f64,
     pub contains_literal_values: f64,
     pub references_other_files: f64,
@@ -55,6 +56,7 @@ pub struct NegativeWeights {
 pub struct IgnoreConfig {
     pub paths: Vec<String>,
     pub comment_patterns: Vec<String>,
+    pub respect_gitignore: bool,
 }
 
 /// Cache configuration.
@@ -99,8 +101,9 @@ impl Default for WeightsConfig {
     fn default() -> Self {
         Self {
             token_overlap_jaccard: 0.25,
-            identifier_substring_ratio: 0.20,
-            imperative_verb_noun: 0.15,
+            identifier_substring_ratio: 0.30,
+            imperative_verb_noun: 0.20,
+            verb_noun_matches_identifier: 0.25,
             is_section_label: 0.10,
             contains_literal_values: 0.05,
             references_other_files: 0.05,
@@ -139,6 +142,7 @@ impl Default for IgnoreConfig {
                 "^// Copyright".to_string(),
                 "^# Copyright".to_string(),
             ],
+            respect_gitignore: true,
         }
     }
 }
@@ -254,14 +258,19 @@ mod tests {
             cfg.weights.token_overlap_jaccard
         );
         assert!(
-            (cfg.weights.identifier_substring_ratio - 0.20).abs() < f64::EPSILON,
-            "Expected identifier_substring_ratio 0.20, got {}",
+            (cfg.weights.identifier_substring_ratio - 0.30).abs() < f64::EPSILON,
+            "Expected identifier_substring_ratio 0.30, got {}",
             cfg.weights.identifier_substring_ratio
         );
         assert!(
-            (cfg.weights.imperative_verb_noun - 0.15).abs() < f64::EPSILON,
-            "Expected imperative_verb_noun 0.15, got {}",
+            (cfg.weights.imperative_verb_noun - 0.20).abs() < f64::EPSILON,
+            "Expected imperative_verb_noun 0.20, got {}",
             cfg.weights.imperative_verb_noun
+        );
+        assert!(
+            (cfg.weights.verb_noun_matches_identifier - 0.25).abs() < f64::EPSILON,
+            "Expected verb_noun_matches_identifier 0.25, got {}",
+            cfg.weights.verb_noun_matches_identifier
         );
     }
 

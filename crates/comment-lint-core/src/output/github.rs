@@ -3,6 +3,7 @@
 use crate::features::ScoredComment;
 use crate::output::OutputFormatter;
 use std::io::Write;
+use std::time::Duration;
 
 /// Formatter that emits GitHub Actions workflow command annotations.
 ///
@@ -35,6 +36,8 @@ impl OutputFormatter for GithubFormatter {
         _total_comments: usize,
         _superfluous_count: usize,
         _file_count: usize,
+        _elapsed: Duration,
+        _cpu_time: Option<Duration>,
         _writer: &mut dyn Write,
     ) -> std::io::Result<()> {
         // GitHub Actions does not use summary annotations -- intentionally a no-op.
@@ -44,6 +47,7 @@ impl OutputFormatter for GithubFormatter {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
     use crate::output::tests::make_scored_comment;
     use crate::output::OutputFormatter;
 
@@ -108,7 +112,7 @@ mod tests {
     fn github_formatter_summary_writes_nothing_or_comment() {
         let formatter = super::GithubFormatter;
         let mut buf = Vec::new();
-        formatter.format_summary(100, 25, 10, &mut buf).unwrap();
+        formatter.format_summary(100, 25, 10, Duration::from_millis(1234), None, &mut buf).unwrap();
         // GitHub Actions does not use summary — either empty or a comment is acceptable
         let output = String::from_utf8(buf).unwrap();
         // Just ensure it does not produce a ::warning or ::error for the summary
