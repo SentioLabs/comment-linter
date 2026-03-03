@@ -5,11 +5,12 @@ Excludes uncertain (label=-1) examples from the output.
 """
 
 import argparse
-import json
 import random
 import sys
 from collections import Counter
 from pathlib import Path
+
+from clt.utils import load_jsonl, write_jsonl
 
 
 def stratified_split(
@@ -60,13 +61,6 @@ def stratified_split(
     return train, val, test
 
 
-def write_jsonl(records: list[dict], path: Path) -> None:
-    """Write records as JSONL to a file."""
-    with open(path, "w") as f:
-        for record in records:
-            f.write(json.dumps(record) + "\n")
-
-
 def report_distribution(name: str, records: list[dict]) -> None:
     """Print label distribution for a split."""
     counts = Counter(r["label"] for r in records)
@@ -106,15 +100,12 @@ def main() -> None:
     records = []
     skipped = 0
     for input_path in args.input:
-        with open(input_path) as f:
-            for line in f:
-                if not line.strip():
-                    continue
-                record = json.loads(line)
-                if record.get("label") == -1:
-                    skipped += 1
-                    continue
-                records.append(record)
+        raw = load_jsonl(input_path)
+        for record in raw:
+            if record.get("label") == -1:
+                skipped += 1
+                continue
+            records.append(record)
         print(f"Loaded from {input_path}: {len(records)} so far")
 
     if not records:

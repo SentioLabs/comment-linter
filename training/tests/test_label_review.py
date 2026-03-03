@@ -8,13 +8,15 @@ import tempfile
 
 import pytest
 
+TRAINING_DIR = os.path.join(os.path.dirname(__file__), "..")
+
 
 class TestDisplaySample:
     """Test the display_sample function output formatting."""
 
     def test_display_sample_shows_file_info(self, capsys):
         """display_sample should show file path and line number."""
-        from label_review import display_sample
+        from clt.label_review import display_sample
 
         sample = {
             "file": "src/main.rs",
@@ -44,7 +46,7 @@ class TestDisplaySample:
 
     def test_display_sample_handles_missing_features(self, capsys):
         """display_sample should handle samples with no features dict."""
-        from label_review import display_sample
+        from clt.label_review import display_sample
 
         sample = {
             "file": "test.py",
@@ -69,10 +71,10 @@ class TestLabelReviewCLI:
     def test_help_flag_works(self):
         """--help should produce usage information and exit 0."""
         result = subprocess.run(
-            [sys.executable, "label_review.py", "--help"],
+            [sys.executable, "-m", "clt.label_review", "--help"],
             capture_output=True,
             text=True,
-            cwd=os.path.join(os.path.dirname(__file__), ".."),
+            cwd=TRAINING_DIR,
         )
         assert result.returncode == 0
         assert "Review uncertain labels" in result.stdout
@@ -80,20 +82,20 @@ class TestLabelReviewCLI:
     def test_requires_input_argument(self):
         """Script should fail if --input is not provided."""
         result = subprocess.run(
-            [sys.executable, "label_review.py", "--output", "/tmp/out.jsonl"],
+            [sys.executable, "-m", "clt.label_review", "--output", "/tmp/out.jsonl"],
             capture_output=True,
             text=True,
-            cwd=os.path.join(os.path.dirname(__file__), ".."),
+            cwd=TRAINING_DIR,
         )
         assert result.returncode != 0
 
     def test_requires_output_argument(self):
         """Script should fail if --output is not provided."""
         result = subprocess.run(
-            [sys.executable, "label_review.py", "--input", "/tmp/in.jsonl"],
+            [sys.executable, "-m", "clt.label_review", "--input", "/tmp/in.jsonl"],
             capture_output=True,
             text=True,
-            cwd=os.path.join(os.path.dirname(__file__), ".."),
+            cwd=TRAINING_DIR,
         )
         assert result.returncode != 0
 
@@ -128,7 +130,7 @@ class TestLabelReviewCLI:
             result = subprocess.run(
                 [
                     sys.executable,
-                    "label_review.py",
+                    "-m", "clt.label_review",
                     "--input",
                     input_file.name,
                     "--output",
@@ -137,7 +139,7 @@ class TestLabelReviewCLI:
                 input="q\n",
                 capture_output=True,
                 text=True,
-                cwd=os.path.join(os.path.dirname(__file__), ".."),
+                cwd=TRAINING_DIR,
             )
             assert result.returncode == 0
             assert "1 uncertain samples" in result.stdout
@@ -172,7 +174,7 @@ class TestLabelReviewCLI:
             result = subprocess.run(
                 [
                     sys.executable,
-                    "label_review.py",
+                    "-m", "clt.label_review",
                     "--input",
                     input_file.name,
                     "--output",
@@ -181,7 +183,7 @@ class TestLabelReviewCLI:
                 input="s\n",
                 capture_output=True,
                 text=True,
-                cwd=os.path.join(os.path.dirname(__file__), ".."),
+                cwd=TRAINING_DIR,
             )
             assert result.returncode == 0
 
@@ -217,7 +219,7 @@ class TestLabelReviewCLI:
             result = subprocess.run(
                 [
                     sys.executable,
-                    "label_review.py",
+                    "-m", "clt.label_review",
                     "--input",
                     input_file.name,
                     "--output",
@@ -226,7 +228,7 @@ class TestLabelReviewCLI:
                 input="v\n",
                 capture_output=True,
                 text=True,
-                cwd=os.path.join(os.path.dirname(__file__), ".."),
+                cwd=TRAINING_DIR,
             )
             assert result.returncode == 0
 

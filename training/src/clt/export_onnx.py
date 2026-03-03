@@ -20,8 +20,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 
-FEATURE_DIM = 16
-OUTPUT_DIM = 2
+from clt.utils import FEATURE_DIM, OUTPUT_DIM
 
 
 def _is_xgboost_model(model) -> bool:

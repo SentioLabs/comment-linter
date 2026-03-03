@@ -22,9 +22,8 @@ from sklearn.metrics import (
     recall_score,
 )
 
-from train import FEATURE_NAMES, extract_features, load_jsonl
-
-FEATURE_DIM = 16
+from clt.utils import FEATURE_DIM, FEATURE_NAMES, load_jsonl
+from clt.train import extract_features
 
 
 def load_onnx_session(model_path: str) -> ort.InferenceSession:

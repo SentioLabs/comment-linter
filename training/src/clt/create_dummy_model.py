@@ -17,8 +17,7 @@ import numpy as np
 import onnx
 from onnx import TensorProto, helper
 
-FEATURE_DIM = 16
-OUTPUT_DIM = 2
+from clt.utils import FEATURE_DIM, OUTPUT_DIM
 
 
 def create_dummy_model() -> onnx.ModelProto:

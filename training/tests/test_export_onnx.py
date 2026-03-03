@@ -63,7 +63,7 @@ def _make_training_data(n_per_class=30):
 
 def _train_and_save_model(output_path):
     """Train a model and save it to the given path, returning the model."""
-    from train import extract_features, train_models, select_best_model
+    from clt.train import extract_features, train_models, select_best_model
     import joblib
 
     records = _make_training_data(n_per_class=30)
@@ -82,7 +82,7 @@ class TestOnnxExport:
 
     def test_export_produces_valid_onnx(self):
         """Exported model should be loadable by onnx.load and pass validation."""
-        from export_onnx import export_to_onnx
+        from clt.export_onnx import export_to_onnx
 
         model_path = tempfile.mktemp(suffix=".joblib")
         onnx_path = tempfile.mktemp(suffix=".onnx")
@@ -102,7 +102,7 @@ class TestOnnxExport:
 
     def test_input_name_is_input(self):
         """ONNX model input must be named 'input'."""
-        from export_onnx import export_to_onnx
+        from clt.export_onnx import export_to_onnx
 
         model_path = tempfile.mktemp(suffix=".joblib")
         onnx_path = tempfile.mktemp(suffix=".onnx")
@@ -123,7 +123,7 @@ class TestOnnxExport:
 
     def test_input_shape_is_none_16(self):
         """ONNX model input shape must be [None, 16]."""
-        from export_onnx import export_to_onnx
+        from clt.export_onnx import export_to_onnx
 
         model_path = tempfile.mktemp(suffix=".joblib")
         onnx_path = tempfile.mktemp(suffix=".onnx")
@@ -144,7 +144,7 @@ class TestOnnxExport:
 
     def test_input_dtype_is_float32(self):
         """ONNX model input dtype must be float32."""
-        from export_onnx import export_to_onnx
+        from clt.export_onnx import export_to_onnx
 
         model_path = tempfile.mktemp(suffix=".joblib")
         onnx_path = tempfile.mktemp(suffix=".onnx")
@@ -164,7 +164,7 @@ class TestOnnxExport:
 
     def test_output_name_is_probabilities(self):
         """ONNX model output must be named 'probabilities'."""
-        from export_onnx import export_to_onnx
+        from clt.export_onnx import export_to_onnx
 
         model_path = tempfile.mktemp(suffix=".joblib")
         onnx_path = tempfile.mktemp(suffix=".onnx")
@@ -185,7 +185,7 @@ class TestOnnxExport:
 
     def test_output_shape_is_none_2(self):
         """ONNX model output shape must be [None, 2] (binary classification probs)."""
-        from export_onnx import export_to_onnx
+        from clt.export_onnx import export_to_onnx
 
         model_path = tempfile.mktemp(suffix=".joblib")
         onnx_path = tempfile.mktemp(suffix=".onnx")
@@ -211,7 +211,7 @@ class TestOnnxExport:
 
     def test_output_probabilities_sum_to_one(self):
         """Output probabilities should approximately sum to 1.0 for each sample."""
-        from export_onnx import export_to_onnx
+        from clt.export_onnx import export_to_onnx
 
         model_path = tempfile.mktemp(suffix=".joblib")
         onnx_path = tempfile.mktemp(suffix=".onnx")
@@ -239,7 +239,7 @@ class TestOnnxExport:
 
     def test_output_dtype_is_float32(self):
         """Output probabilities must be float32."""
-        from export_onnx import export_to_onnx
+        from clt.export_onnx import export_to_onnx
 
         model_path = tempfile.mktemp(suffix=".joblib")
         onnx_path = tempfile.mktemp(suffix=".onnx")
@@ -264,7 +264,7 @@ class TestOnnxExport:
 
     def test_batch_inference_works(self):
         """ONNX model should handle batch input correctly."""
-        from export_onnx import export_to_onnx
+        from clt.export_onnx import export_to_onnx
 
         model_path = tempfile.mktemp(suffix=".joblib")
         onnx_path = tempfile.mktemp(suffix=".onnx")
@@ -297,7 +297,7 @@ class TestExportOnnxCLI:
     def test_help_flag_works(self):
         """--help should produce usage information and exit 0."""
         result = subprocess.run(
-            [sys.executable, "export_onnx.py", "--help"],
+            [sys.executable, "-m", "clt.export_onnx", "--help"],
             capture_output=True,
             text=True,
             cwd=TRAINING_DIR,
@@ -316,7 +316,7 @@ class TestExportOnnxCLI:
             result = subprocess.run(
                 [
                     sys.executable,
-                    "export_onnx.py",
+                    "-m", "clt.export_onnx",
                     "--model",
                     model_path,
                     "--output",

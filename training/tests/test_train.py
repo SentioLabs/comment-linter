@@ -9,27 +9,7 @@ import tempfile
 import numpy as np
 import pytest
 
-
-# --- Constants matching tensor.rs feature order ---
-
-FEATURE_NAMES = [
-    "token_overlap_jaccard",        # 0
-    "identifier_substring_ratio",   # 1
-    "comment_token_count",          # 2
-    "is_doc_comment",               # 3
-    "is_before_declaration",        # 4
-    "is_inline",                    # 5
-    "nesting_depth",                # 6
-    "has_why_indicator",            # 7
-    "has_external_ref",             # 8
-    "imperative_verb_noun",         # 9
-    "is_section_label",             # 10
-    "contains_literal_values",      # 11
-    "references_other_files",       # 12
-    "references_specific_functions",  # 13
-    "mirrors_data_structure",       # 14
-    "comment_code_age_ratio",       # 15
-]
+from clt.utils import FEATURE_NAMES
 
 TRAINING_DIR = os.path.join(os.path.dirname(__file__), "..")
 
@@ -101,7 +81,7 @@ class TestFeatureExtraction:
 
     def test_extract_features_returns_16_columns(self):
         """Feature extraction should produce exactly 16 features."""
-        from train import extract_features
+        from clt.train import extract_features
 
         records = [_make_sample(1), _make_sample(0)]
         X, y = extract_features(records)
@@ -109,7 +89,7 @@ class TestFeatureExtraction:
 
     def test_extract_features_correct_order(self):
         """Features must be in the exact order defined by tensor.rs."""
-        from train import extract_features
+        from clt.train import extract_features
 
         record = _make_sample(
             1,
@@ -152,7 +132,7 @@ class TestFeatureExtraction:
 
     def test_null_comment_code_age_ratio_maps_to_zero(self):
         """null comment_code_age_ratio should map to 0.0."""
-        from train import extract_features
+        from clt.train import extract_features
 
         record = _make_sample(1, comment_code_age_ratio=None)
         X, _ = extract_features([record])
@@ -160,7 +140,7 @@ class TestFeatureExtraction:
 
     def test_nonnull_comment_code_age_ratio_preserved(self):
         """Non-null comment_code_age_ratio should preserve value."""
-        from train import extract_features
+        from clt.train import extract_features
 
         record = _make_sample(1, comment_code_age_ratio=0.75)
         X, _ = extract_features([record])
@@ -168,7 +148,7 @@ class TestFeatureExtraction:
 
     def test_bool_true_maps_to_one(self):
         """Boolean True features should map to 1.0."""
-        from train import extract_features
+        from clt.train import extract_features
 
         record = _make_sample(1, is_doc_comment=True, has_why_indicator=True)
         X, _ = extract_features([record])
@@ -177,7 +157,7 @@ class TestFeatureExtraction:
 
     def test_bool_false_maps_to_zero(self):
         """Boolean False features should map to 0.0."""
-        from train import extract_features
+        from clt.train import extract_features
 
         record = _make_sample(1, is_doc_comment=False, has_why_indicator=False)
         X, _ = extract_features([record])
@@ -186,7 +166,7 @@ class TestFeatureExtraction:
 
     def test_labels_extracted_correctly(self):
         """Labels should be extracted as numpy array."""
-        from train import extract_features
+        from clt.train import extract_features
 
         records = [_make_sample(1), _make_sample(0), _make_sample(1)]
         _, y = extract_features(records)
@@ -194,7 +174,7 @@ class TestFeatureExtraction:
 
     def test_feature_names_constant_matches_tensor_rs(self):
         """FEATURE_NAMES constant should match the expected order from tensor.rs."""
-        from train import FEATURE_NAMES as module_names
+        from clt.train import FEATURE_NAMES as module_names
 
         assert module_names == FEATURE_NAMES
 
@@ -207,7 +187,7 @@ class TestLoadJsonl:
 
     def test_load_jsonl_reads_records(self):
         """load_jsonl should read all records from a JSONL file."""
-        from train import load_jsonl
+        from clt.train import load_jsonl
 
         records = [_make_sample(1), _make_sample(0)]
         with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
@@ -225,7 +205,7 @@ class TestLoadJsonl:
 
     def test_load_jsonl_skips_empty_lines(self):
         """load_jsonl should skip empty lines."""
-        from train import load_jsonl
+        from clt.train import load_jsonl
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
             f.write(json.dumps(_make_sample(1)) + "\n")
@@ -248,7 +228,7 @@ class TestTrainModels:
 
     def test_train_models_returns_dict_of_models(self):
         """train_models should return a dict of trained model objects."""
-        from train import train_models, extract_features
+        from clt.train import train_models, extract_features
 
         records = _make_training_data(n_per_class=30)
         X, y = extract_features(records)
@@ -261,7 +241,7 @@ class TestTrainModels:
 
     def test_train_models_includes_expected_classifiers(self):
         """train_models should train LogisticRegression, RandomForest, and XGBClassifier."""
-        from train import train_models, extract_features
+        from clt.train import train_models, extract_features
 
         records = _make_training_data(n_per_class=30)
         X, y = extract_features(records)
@@ -271,7 +251,7 @@ class TestTrainModels:
 
     def test_select_best_model_picks_highest_f1(self):
         """select_best_model should select the model with the highest cross-val F1."""
-        from train import select_best_model, train_models, extract_features
+        from clt.train import select_best_model, train_models, extract_features
 
         records = _make_training_data(n_per_class=30)
         X, y = extract_features(records)
@@ -294,7 +274,7 @@ class TestTrainCLI:
     def test_help_flag_works(self):
         """--help should produce usage information and exit 0."""
         result = subprocess.run(
-            [sys.executable, "train.py", "--help"],
+            [sys.executable, "-m", "clt.train", "--help"],
             capture_output=True,
             text=True,
             cwd=TRAINING_DIR,
@@ -305,7 +285,7 @@ class TestTrainCLI:
     def test_requires_train_argument(self):
         """Script should fail if --train is not provided."""
         result = subprocess.run(
-            [sys.executable, "train.py", "--output", "/tmp/model.joblib"],
+            [sys.executable, "-m", "clt.train", "--output", "/tmp/model.joblib"],
             capture_output=True,
             text=True,
             cwd=TRAINING_DIR,
@@ -314,7 +294,7 @@ class TestTrainCLI:
 
     def test_end_to_end_training(self):
         """Full training run should produce a joblib model file."""
-        from train import extract_features, train_models
+        from clt.train import extract_features, train_models
 
         records = _make_training_data(n_per_class=30)
 
@@ -331,7 +311,7 @@ class TestTrainCLI:
             result = subprocess.run(
                 [
                     sys.executable,
-                    "train.py",
+                    "-m", "clt.train",
                     "--train",
                     train_path,
                     "--output",

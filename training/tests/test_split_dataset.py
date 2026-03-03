@@ -8,6 +8,8 @@ import tempfile
 
 import pytest
 
+TRAINING_DIR = os.path.join(os.path.dirname(__file__), "..")
+
 
 class TestSplitDatasetCLI:
     """Test the split_dataset.py CLI behavior."""
@@ -15,10 +17,10 @@ class TestSplitDatasetCLI:
     def test_help_flag_works(self):
         """--help should produce usage information and exit 0."""
         result = subprocess.run(
-            [sys.executable, "split_dataset.py", "--help"],
+            [sys.executable, "-m", "clt.split_dataset", "--help"],
             capture_output=True,
             text=True,
-            cwd=os.path.join(os.path.dirname(__file__), ".."),
+            cwd=TRAINING_DIR,
         )
         assert result.returncode == 0
         assert "Split dataset" in result.stdout
@@ -26,20 +28,20 @@ class TestSplitDatasetCLI:
     def test_requires_input_argument(self):
         """Script should fail if --input is not provided."""
         result = subprocess.run(
-            [sys.executable, "split_dataset.py", "--output-dir", "/tmp/splits"],
+            [sys.executable, "-m", "clt.split_dataset", "--output-dir", "/tmp/splits"],
             capture_output=True,
             text=True,
-            cwd=os.path.join(os.path.dirname(__file__), ".."),
+            cwd=TRAINING_DIR,
         )
         assert result.returncode != 0
 
     def test_requires_output_dir_argument(self):
         """Script should fail if --output-dir is not provided."""
         result = subprocess.run(
-            [sys.executable, "split_dataset.py", "--input", "/tmp/data.jsonl"],
+            [sys.executable, "-m", "clt.split_dataset", "--input", "/tmp/data.jsonl"],
             capture_output=True,
             text=True,
-            cwd=os.path.join(os.path.dirname(__file__), ".."),
+            cwd=TRAINING_DIR,
         )
         assert result.returncode != 0
 
@@ -69,7 +71,7 @@ class TestSplitDatasetCLI:
             result = subprocess.run(
                 [
                     sys.executable,
-                    "split_dataset.py",
+                    "-m", "clt.split_dataset",
                     "--input",
                     input_file.name,
                     "--output-dir",
@@ -79,7 +81,7 @@ class TestSplitDatasetCLI:
                 ],
                 capture_output=True,
                 text=True,
-                cwd=os.path.join(os.path.dirname(__file__), ".."),
+                cwd=TRAINING_DIR,
             )
             assert result.returncode == 0, f"stderr: {result.stderr}\nstdout: {result.stdout}"
             assert "5 uncertain excluded" in result.stdout
@@ -124,7 +126,7 @@ class TestSplitDatasetCLI:
             result = subprocess.run(
                 [
                     sys.executable,
-                    "split_dataset.py",
+                    "-m", "clt.split_dataset",
                     "--input",
                     input_file.name,
                     "--output-dir",
@@ -134,7 +136,7 @@ class TestSplitDatasetCLI:
                 ],
                 capture_output=True,
                 text=True,
-                cwd=os.path.join(os.path.dirname(__file__), ".."),
+                cwd=TRAINING_DIR,
             )
             assert result.returncode == 0, f"stderr: {result.stderr}\nstdout: {result.stdout}"
 
@@ -178,7 +180,7 @@ class TestSplitDatasetCLI:
             result = subprocess.run(
                 [
                     sys.executable,
-                    "split_dataset.py",
+                    "-m", "clt.split_dataset",
                     "--input",
                     input_file.name,
                     "--output-dir",
@@ -186,7 +188,7 @@ class TestSplitDatasetCLI:
                 ],
                 capture_output=True,
                 text=True,
-                cwd=os.path.join(os.path.dirname(__file__), ".."),
+                cwd=TRAINING_DIR,
             )
             assert result.returncode == 0, f"stderr: {result.stderr}\nstdout: {result.stdout}"
 
@@ -221,7 +223,7 @@ class TestSplitDatasetCLI:
                 subprocess.run(
                     [
                         sys.executable,
-                        "split_dataset.py",
+                        "-m", "clt.split_dataset",
                         "--input",
                         input_file.name,
                         "--output-dir",
@@ -231,7 +233,7 @@ class TestSplitDatasetCLI:
                     ],
                     capture_output=True,
                     text=True,
-                    cwd=os.path.join(os.path.dirname(__file__), ".."),
+                    cwd=TRAINING_DIR,
                 )
 
             for split_name in ["train", "val", "test"]:
@@ -267,7 +269,7 @@ class TestSplitDatasetCLI:
             result = subprocess.run(
                 [
                     sys.executable,
-                    "split_dataset.py",
+                    "-m", "clt.split_dataset",
                     "--input",
                     input_file.name,
                     "--output-dir",
@@ -277,7 +279,7 @@ class TestSplitDatasetCLI:
                 ],
                 capture_output=True,
                 text=True,
-                cwd=os.path.join(os.path.dirname(__file__), ".."),
+                cwd=TRAINING_DIR,
             )
             assert result.returncode == 0
 
@@ -314,7 +316,7 @@ class TestSplitDatasetCLI:
             result = subprocess.run(
                 [
                     sys.executable,
-                    "split_dataset.py",
+                    "-m", "clt.split_dataset",
                     "--input",
                     input_file.name,
                     "--output-dir",
@@ -322,7 +324,7 @@ class TestSplitDatasetCLI:
                 ],
                 capture_output=True,
                 text=True,
-                cwd=os.path.join(os.path.dirname(__file__), ".."),
+                cwd=TRAINING_DIR,
             )
             assert result.returncode == 0
             assert "train:" in result.stdout

@@ -8,6 +8,8 @@ import tempfile
 
 import pytest
 
+TRAINING_DIR = os.path.join(os.path.dirname(__file__), "..")
+
 
 # --- Tests for label_from_score ---
 
@@ -17,7 +19,7 @@ class TestLabelFromScore:
 
     def test_high_score_is_superfluous(self):
         """Score >= 0.7 should be labeled as superfluous (label=1)."""
-        from generate_data import label_from_score
+        from clt.generate_data import label_from_score
 
         label, source = label_from_score(0.7)
         assert label == 1
@@ -25,7 +27,7 @@ class TestLabelFromScore:
 
     def test_very_high_score_is_superfluous(self):
         """Score of 0.95 should be labeled as superfluous."""
-        from generate_data import label_from_score
+        from clt.generate_data import label_from_score
 
         label, source = label_from_score(0.95)
         assert label == 1
@@ -33,7 +35,7 @@ class TestLabelFromScore:
 
     def test_score_exactly_one_is_superfluous(self):
         """Score of 1.0 should be labeled as superfluous."""
-        from generate_data import label_from_score
+        from clt.generate_data import label_from_score
 
         label, source = label_from_score(1.0)
         assert label == 1
@@ -41,7 +43,7 @@ class TestLabelFromScore:
 
     def test_low_score_is_valuable(self):
         """Score <= 0.3 should be labeled as valuable (label=0)."""
-        from generate_data import label_from_score
+        from clt.generate_data import label_from_score
 
         label, source = label_from_score(0.3)
         assert label == 0
@@ -49,7 +51,7 @@ class TestLabelFromScore:
 
     def test_very_low_score_is_valuable(self):
         """Score of 0.1 should be labeled as valuable."""
-        from generate_data import label_from_score
+        from clt.generate_data import label_from_score
 
         label, source = label_from_score(0.1)
         assert label == 0
@@ -57,7 +59,7 @@ class TestLabelFromScore:
 
     def test_zero_score_is_valuable(self):
         """Score of 0.0 should be labeled as valuable."""
-        from generate_data import label_from_score
+        from clt.generate_data import label_from_score
 
         label, source = label_from_score(0.0)
         assert label == 0
@@ -65,7 +67,7 @@ class TestLabelFromScore:
 
     def test_mid_score_is_uncertain(self):
         """Score between 0.3 and 0.7 (exclusive) should be uncertain (label=-1)."""
-        from generate_data import label_from_score
+        from clt.generate_data import label_from_score
 
         label, source = label_from_score(0.5)
         assert label == -1
@@ -73,7 +75,7 @@ class TestLabelFromScore:
 
     def test_just_above_low_threshold_is_uncertain(self):
         """Score just above 0.3 should be uncertain."""
-        from generate_data import label_from_score
+        from clt.generate_data import label_from_score
 
         label, source = label_from_score(0.31)
         assert label == -1
@@ -81,7 +83,7 @@ class TestLabelFromScore:
 
     def test_just_below_high_threshold_is_uncertain(self):
         """Score just below 0.7 should be uncertain."""
-        from generate_data import label_from_score
+        from clt.generate_data import label_from_score
 
         label, source = label_from_score(0.69)
         assert label == -1
@@ -97,10 +99,10 @@ class TestGenerateDataCLI:
     def test_help_flag_works(self):
         """--help should produce usage information and exit 0."""
         result = subprocess.run(
-            [sys.executable, "generate_data.py", "--help"],
+            [sys.executable, "-m", "clt.generate_data", "--help"],
             capture_output=True,
             text=True,
-            cwd=os.path.join(os.path.dirname(__file__), ".."),
+            cwd=TRAINING_DIR,
         )
         assert result.returncode == 0
         assert "Generate labeled training data" in result.stdout
@@ -108,20 +110,20 @@ class TestGenerateDataCLI:
     def test_requires_binary_argument(self):
         """Script should fail if --binary is not provided."""
         result = subprocess.run(
-            [sys.executable, "generate_data.py", "--dir", "/tmp"],
+            [sys.executable, "-m", "clt.generate_data", "--dir", "/tmp"],
             capture_output=True,
             text=True,
-            cwd=os.path.join(os.path.dirname(__file__), ".."),
+            cwd=TRAINING_DIR,
         )
         assert result.returncode != 0
 
     def test_requires_dir_argument(self):
         """Script should fail if --dir is not provided."""
         result = subprocess.run(
-            [sys.executable, "generate_data.py", "--binary", "/usr/bin/echo"],
+            [sys.executable, "-m", "clt.generate_data", "--binary", "/usr/bin/echo"],
             capture_output=True,
             text=True,
-            cwd=os.path.join(os.path.dirname(__file__), ".."),
+            cwd=TRAINING_DIR,
         )
         assert result.returncode != 0
 
@@ -159,7 +161,7 @@ class TestGenerateDataCLI:
             result = subprocess.run(
                 [
                     sys.executable,
-                    "generate_data.py",
+                    "-m", "clt.generate_data",
                     "--binary",
                     mock_binary.name,
                     "--dir",
@@ -169,7 +171,7 @@ class TestGenerateDataCLI:
                 ],
                 capture_output=True,
                 text=True,
-                cwd=os.path.join(os.path.dirname(__file__), ".."),
+                cwd=TRAINING_DIR,
             )
             assert result.returncode == 0, f"stderr: {result.stderr}"
 
@@ -212,7 +214,7 @@ class TestGenerateDataCLI:
             result = subprocess.run(
                 [
                     sys.executable,
-                    "generate_data.py",
+                    "-m", "clt.generate_data",
                     "--binary",
                     mock_binary.name,
                     "--dir",
@@ -220,7 +222,7 @@ class TestGenerateDataCLI:
                 ],
                 capture_output=True,
                 text=True,
-                cwd=os.path.join(os.path.dirname(__file__), ".."),
+                cwd=TRAINING_DIR,
             )
             assert result.returncode == 0
             assert "Generated" in result.stderr

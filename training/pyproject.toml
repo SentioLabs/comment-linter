@@ -1,7 +1,11 @@
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "comment-lint-training"
 version = "0.1.0"
-description = "Add your description here"
+description = "Training pipeline for comment-lint ML classifier"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -15,10 +19,23 @@ dependencies = [
     "xgboost>=3.2.0",
 ]
 
+[project.scripts]
+clt-generate-data      = "clt.generate_data:main"
+clt-generate-synthetic = "clt.generate_synthetic:main"
+clt-build-dataset      = "clt.build_high_quality_dataset:main"
+clt-label-review       = "clt.label_review:main"
+clt-split-dataset      = "clt.split_dataset:main"
+clt-train              = "clt.train:main"
+clt-export-onnx        = "clt.export_onnx:main"
+clt-evaluate           = "clt.evaluate_model:main"
+
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
 ]
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
