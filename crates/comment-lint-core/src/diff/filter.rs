@@ -33,7 +33,7 @@ impl DiffFilter {
 
     /// Parse a unified diff string and build a `DiffFilter`.
     pub fn from_diff_text(diff_text: &str) -> Result<Self, String> {
-        let deltas = super::parser::parse_unified_diff(diff_text)?;
+        let deltas = super::parser::parse_unified_diff(diff_text);
         Ok(Self::new(deltas))
     }
 
