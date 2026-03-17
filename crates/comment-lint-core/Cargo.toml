@@ -22,6 +22,7 @@ ignore = { workspace = true }
 crossbeam-channel = { workspace = true }
 colored = { workspace = true }
 anyhow = { workspace = true }
+unidiff = { workspace = true }
 
 [dev-dependencies]
 tempfile = "3"

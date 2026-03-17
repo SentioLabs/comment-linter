@@ -24,3 +24,4 @@ ignore = "0.4"
 crossbeam-channel = "0.5"
 insta = { version = "1", features = ["yaml"] }
 ort = "2.0.0-rc.11"
+unidiff = "0.4"

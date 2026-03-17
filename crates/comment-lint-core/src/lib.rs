@@ -4,6 +4,7 @@
 //! detecting superfluous comments in source code across multiple languages.
 
 pub mod config;
+pub mod diff;
 pub mod extraction;
 pub mod features;
 pub mod languages;
