@@ -161,9 +161,21 @@ fn main() -> ExitCode {
     let cpu_before = cpu_time();
     let wall_start = Instant::now();
 
-    // TODO(T4): When input_mode == Diff, read stdin and pass DiffFilter to pipeline
     let pipeline = Pipeline::new(config, scorer);
-    let result = pipeline.run(&cli.paths);
+    let result = match cli.input_mode {
+        InputMode::Files => pipeline.run(&cli.paths),
+        InputMode::Diff => {
+            use comment_lint_core::diff::filter::DiffFilter;
+            let filter = match DiffFilter::from_stdin() {
+                Ok(f) => f,
+                Err(e) => {
+                    eprintln!("error: failed to parse diff from stdin: {e}");
+                    return ExitCode::from(2);
+                }
+            };
+            pipeline.with_diff_filter(filter).run(&[])
+        }
+    };
 
     let elapsed = wall_start.elapsed();
     let cpu_elapsed = cpu_before.and_then(|before| cpu_time().map(|after| after - before));

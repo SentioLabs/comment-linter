@@ -9,6 +9,7 @@ use regex::Regex;
 use walkdir::WalkDir;
 
 use crate::config::Config;
+use crate::diff::filter::DiffFilter;
 use crate::features::cross_reference::extract_cross_reference_features;
 use crate::features::lexical::extract_lexical_features;
 use crate::features::semantic::extract_semantic_features;
@@ -37,6 +38,7 @@ pub struct Pipeline {
     scorer: Box<dyn Scorer + Send + Sync>,
     ignore_regexes: Vec<Regex>,
     comment_pattern_regexes: Vec<Regex>,
+    diff_filter: Option<DiffFilter>,
 }
 
 impl Pipeline {
@@ -61,7 +63,15 @@ impl Pipeline {
             scorer,
             ignore_regexes,
             comment_pattern_regexes,
+            diff_filter: None,
         }
+    }
+
+    /// Attach a `DiffFilter` so the pipeline only processes files and lines
+    /// that appear in the diff.
+    pub fn with_diff_filter(mut self, filter: DiffFilter) -> Self {
+        self.diff_filter = Some(filter);
+        self
     }
 
     /// Run the pipeline on the given paths (files or directories).
@@ -70,7 +80,12 @@ impl Pipeline {
     /// or that match ignore patterns are skipped. Results are filtered by
     /// threshold and min_confidence from the config.
     pub fn run(&self, paths: &[PathBuf]) -> PipelineResult {
-        let files = self.discover_files(paths);
+        let files = if let Some(ref df) = self.diff_filter {
+            let cwd = std::env::current_dir().unwrap_or_default();
+            df.files().map(|p| cwd.join(p)).collect()
+        } else {
+            self.discover_files(paths)
+        };
 
         let threshold = self.config.general.threshold as f32;
         let min_confidence = self.config.general.min_confidence as f32;
@@ -182,6 +197,12 @@ impl Pipeline {
                 // Skip comments matching ignore patterns
                 if self.is_comment_ignored(&ctx.comment_text) {
                     return false;
+                }
+                // Skip comments not on added lines when diff filtering
+                if let Some(ref df) = self.diff_filter {
+                    if !df.includes(&ctx.file_path.to_string_lossy(), ctx.line) {
+                        return false;
+                    }
                 }
                 true
             })
@@ -621,6 +642,58 @@ func decrementCounter() {}
         assert!(
             !has_excluded,
             "generated/excluded.go should be skipped by .gitignore"
+        );
+    }
+
+    // ---- Test: pipeline with diff filter only includes comments on added lines ----
+
+    #[test]
+    fn test_pipeline_with_diff_filter() {
+        use std::collections::BTreeSet;
+        use crate::diff::filter::DiffFilter;
+        use crate::diff::FileDelta;
+
+        let dir = tempfile::tempdir().expect("temp dir");
+        // Go file with two comments on different lines
+        let go_src = r#"package main
+
+// first comment
+func first() {}
+
+// second comment
+func second() {}
+"#;
+        let file_path = write_file(&dir, "main.go", go_src);
+
+        // "// first comment" is on line 3, "// second comment" is on line 6
+        // Create a DiffFilter that only includes line 3 (the first comment)
+        let relative_path = file_path.clone();
+        let filter = DiffFilter::new(vec![FileDelta {
+            path: relative_path,
+            added_lines: BTreeSet::from([3]),
+        }]);
+
+        let mut config = Config::default();
+        config.general.threshold = 0.0;
+        config.general.min_confidence = 0.0;
+        config.general.include_doc_comments = true;
+        config.ignore.paths = vec![];
+        config.ignore.comment_patterns = vec![];
+
+        let pipeline = make_pipeline(config).with_diff_filter(filter);
+        let result = pipeline.run(&[]);
+
+        // Should only contain the first comment (line 3), not the second (line 6)
+        assert_eq!(
+            result.scored_comments.len(),
+            1,
+            "Should have exactly 1 comment after diff filtering, got {}",
+            result.scored_comments.len()
+        );
+        assert!(
+            result.scored_comments[0].context.comment_text.contains("first comment"),
+            "The filtered comment should be 'first comment', got '{}'",
+            result.scored_comments[0].context.comment_text
         );
     }
 
