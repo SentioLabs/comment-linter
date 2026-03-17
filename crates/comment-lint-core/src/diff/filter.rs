@@ -105,7 +105,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_from_diff_text() {
         let diff = "\
 diff --git a/src/foo.rs b/src/foo.rs
