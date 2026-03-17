@@ -38,12 +38,29 @@ impl DiffFilter {
     }
 
     /// Check if a given file path and line number are within the added lines.
+    ///
+    /// Handles both relative and absolute paths: if `path` is absolute (e.g.
+    /// `/tmp/project/src/main.go`) and the diff contains a relative path
+    /// (`src/main.go`), this method checks whether `path` ends with any of
+    /// the diff's relative paths.
     pub fn includes(&self, path: &str, line: usize) -> bool {
         let p = Path::new(path);
         let normalized = p.strip_prefix("./").unwrap_or(p);
-        self.changed_lines
-            .get(normalized)
-            .map_or(false, |lines| lines.contains(&line))
+
+        // Fast path: exact match (handles relative-to-relative lookups).
+        if let Some(lines) = self.changed_lines.get(normalized) {
+            return lines.contains(&line);
+        }
+
+        // Slow path: the queried path may be absolute while the diff paths
+        // are relative.  Check whether `normalized` ends with any known key.
+        for (diff_path, lines) in &self.changed_lines {
+            if normalized.ends_with(diff_path) {
+                return lines.contains(&line);
+            }
+        }
+
+        false
     }
 
     /// Iterate over all file paths in the diff.
@@ -132,5 +149,17 @@ index 1234567..abcdefg 100644
         assert!(filter.includes("./src/foo.rs", 5));
         // And without leading "./" should also match
         assert!(filter.includes("src/foo.rs", 5));
+    }
+
+    #[test]
+    fn test_absolute_path_matches_relative_diff_path() {
+        let filter = DiffFilter::new(vec![FileDelta {
+            path: PathBuf::from("src/foo.rs"),
+            added_lines: BTreeSet::from([5]),
+        }]);
+        // Absolute path should match the relative diff path via suffix matching
+        assert!(filter.includes("/tmp/project/src/foo.rs", 5));
+        assert!(!filter.includes("/tmp/project/src/foo.rs", 6));
+        assert!(!filter.includes("/tmp/project/src/bar.rs", 5));
     }
 }

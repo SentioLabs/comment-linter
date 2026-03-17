@@ -1,0 +1,24 @@
+diff --git a/src/main.go b/src/main.go
+new file mode 100644
+--- /dev/null
++++ b/src/main.go
+@@ -0,0 +1,7 @@
++package main
++
++// increment counter
++func incrementCounter() {
++	counter++
++}
++
+diff --git a/src/utils.go b/src/utils.go
+new file mode 100644
+--- /dev/null
++++ b/src/utils.go
+@@ -0,0 +1,7 @@
++package main
++
++// add numbers
++func addNumbers(a int, b int) int {
++	return a + b
++}
++
