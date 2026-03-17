@@ -187,7 +187,7 @@ dependencies = [
 
 [[package]]
 name = "comment-lint"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -200,7 +200,7 @@ dependencies = [
 
 [[package]]
 name = "comment-lint-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "colored",
@@ -226,7 +226,7 @@ dependencies = [
 
 [[package]]
 name = "comment-lint-ml"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "comment-lint-core",
