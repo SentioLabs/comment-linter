@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.0](https://github.com/SentioLabs/comment-linter/compare/v0.2.0...v0.3.0) (2026-03-17)
+
+
+### Features
+
+* **cli:** add --input-mode flag with diff/files modes ([9d8c26c](https://github.com/SentioLabs/comment-linter/commit/9d8c26c6a991b2775e22a945003a68793e066a30))
+* **diff:** add diff module with InputMode and FileDelta types ([da53088](https://github.com/SentioLabs/comment-linter/commit/da53088d224fbcbb4f9dc8003539878c5e4f8eb2))
+* **diff:** implement DiffFilter for changed-line comment filtering ([fc94e5d](https://github.com/SentioLabs/comment-linter/commit/fc94e5d13732202f6fdbb0a8045fbd873749f2e9))
+* **diff:** implement unified diff parser with unidiff crate ([2f1cb30](https://github.com/SentioLabs/comment-linter/commit/2f1cb30d6b52af06fd828ee0592898d07a3d671b))
+* **diff:** integrate DiffFilter into pipeline and CLI ([0eeb271](https://github.com/SentioLabs/comment-linter/commit/0eeb271c32d74c863bf631691852ba26bc9b052f))
+
+
+### Bug Fixes
+
+* **diff:** fix DiffFilter::from_diff_text to match parser return type ([1ea4ef4](https://github.com/SentioLabs/comment-linter/commit/1ea4ef4162dece40781a22f6b45f7f949122da49))
+
 ## [0.2.0](https://github.com/SentioLabs/comment-linter/compare/v0.1.0...v0.2.0) (2026-03-03)
 
 
