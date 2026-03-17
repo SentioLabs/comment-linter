@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::{Duration, Instant};
 
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use comment_lint_core::config::Config;
 use comment_lint_core::output::features_jsonl::FeaturesJsonlFormatter;
 use comment_lint_core::output::github::GithubFormatter;
@@ -13,6 +13,14 @@ use comment_lint_core::pipeline::Pipeline;
 use comment_lint_core::scoring::heuristic::HeuristicScorer;
 use comment_lint_core::scoring::Scorer;
 
+#[derive(Clone, Debug, ValueEnum)]
+enum InputMode {
+    /// Scan explicit file/directory paths (default)
+    Files,
+    /// Read unified diff from stdin, lint only added lines
+    Diff,
+}
+
 #[derive(Parser, Debug)]
 #[command(
     name = "comment-lint",
@@ -20,9 +28,13 @@ use comment_lint_core::scoring::Scorer;
     about = "Detect superfluous code comments"
 )]
 struct Cli {
-    /// Files or directories to scan
-    #[arg(required = true)]
+    /// Files or directories to scan (required for --input-mode=files)
+    #[arg()]
     paths: Vec<PathBuf>,
+
+    /// Input mode: "files" (default) or "diff" (read unified diff from stdin)
+    #[arg(long, value_enum, default_value_t = InputMode::Files)]
+    input_mode: InputMode,
 
     /// Output format: text, json, github
     #[arg(short, long, default_value = "text")]
@@ -63,6 +75,23 @@ struct Cli {
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
+
+    // Validate input mode
+    match cli.input_mode {
+        InputMode::Files => {
+            if cli.paths.is_empty() {
+                eprintln!("error: at least one path is required with --input-mode=files");
+                return ExitCode::from(2);
+            }
+        }
+        InputMode::Diff => {
+            use std::io::IsTerminal;
+            if std::io::stdin().is_terminal() {
+                eprintln!("error: --input-mode=diff requires piped input (e.g., git diff | comment-lint --input-mode=diff)");
+                return ExitCode::from(2);
+            }
+        }
+    }
 
     // 1. Load config with resolution chain
     let cwd = std::env::current_dir().unwrap_or_default();
@@ -132,6 +161,7 @@ fn main() -> ExitCode {
     let cpu_before = cpu_time();
     let wall_start = Instant::now();
 
+    // TODO(T4): When input_mode == Diff, read stdin and pass DiffFilter to pipeline
     let pipeline = Pipeline::new(config, scorer);
     let result = pipeline.run(&cli.paths);
 
